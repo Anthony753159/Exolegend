@@ -1,5 +1,7 @@
 #pragma once
 
+#define MAZE_SIZE 14
+
 struct TrajectoryMsg
 {
   enum State
@@ -9,6 +11,8 @@ struct TrajectoryMsg
     BACKWARD,
     LEFT,
     RIGHT,
+    ROTATE,
+    MOVE_DISTANCE
   };
 
   enum Order
@@ -16,6 +20,8 @@ struct TrajectoryMsg
     UNDEFINED,
     GOTO,
     SET_STATE,
+    ORDER_ROTATE,
+    ORDER_MOVE_DISTANCE
   };
 
   Order order = UNDEFINED;
@@ -26,4 +32,11 @@ struct TrajectoryMsg
 
   // SET_STATE
   State state;
+
+  // ORDER_ROTATE
+  float angle;
+
+  // MOVE_DISTANCE
+  float distance;
+  bool forward;
 };
