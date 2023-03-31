@@ -11,7 +11,7 @@ Strategy::~Strategy()
 {
 }
 
-TrajectoryMsg Strategy::Update()
+TrajectoryMsg Strategy::Update(const RobotData &data)
 {
   TrajectoryMsg msg;
 

@@ -9,7 +9,7 @@ public:
   Strategy(Gladiator *gladiator);
   ~Strategy();
 
-  TrajectoryMsg Update();
+  TrajectoryMsg Update(const RobotData &data);
 
 private:
   Gladiator *m_gladiator;

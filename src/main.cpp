@@ -40,17 +40,21 @@ void reset()
   trajectory = new Trajectory(gladiator);
 }
 
+RobotData robot_data;
+
 void loop()
 {
   if (gladiator->game->isStarted() || FREE_MODE)
   {
-    TrajectoryMsg msg = strategy->Update();
+    robot_data = gladiator->robot->getData();
+
+    TrajectoryMsg msg = strategy->Update(robot_data);
     if (msg.order != TrajectoryMsg::UNDEFINED)
     {
       trajectory->HandleMessage(msg);
     }
 
-    trajectory->Update();
+    trajectory->Update(robot_data);
 
     delay(100);
   }

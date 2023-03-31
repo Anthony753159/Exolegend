@@ -24,7 +24,7 @@ void Trajectory::HandleMessage(const TrajectoryMsg &msg)
   }
 }
 
-void Trajectory::Update()
+void Trajectory::Update(const RobotData &data)
 {
   switch (m_state)
   {

@@ -10,7 +10,7 @@ public:
   ~Trajectory();
 
   void HandleMessage(const TrajectoryMsg &msg);
-  void Update();
+  void Update(const RobotData &data);
 
 private:
   Gladiator *m_gladiator;
