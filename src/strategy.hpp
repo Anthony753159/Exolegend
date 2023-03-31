@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gladiator.h"
+#include "comms.hpp"
 
 class Strategy
 {
@@ -8,32 +9,23 @@ public:
   Strategy(Gladiator *gladiator);
   ~Strategy();
 
-  void Update();
-  void UpdateState();
+  TrajectoryMsg Update();
 
 private:
   Gladiator *m_gladiator;
 
-  enum State
-  {
-    IDLE,
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
-  } m_state;
-
   size_t m_state_index;
-  State m_state_sequence[8] = {
-      State::IDLE,
-      State::FORWARD,
-      State::LEFT,
-      State::FORWARD,
-      State::RIGHT,
-      State::FORWARD,
-      State::BACKWARD,
-      State::IDLE,
+  TrajectoryMsg::State m_state_sequence[9] = {
+      TrajectoryMsg::State::IDLE,
+      TrajectoryMsg::State::FORWARD,
+      TrajectoryMsg::State::LEFT,
+      TrajectoryMsg::State::IDLE,
+      TrajectoryMsg::State::FORWARD,
+      TrajectoryMsg::State::RIGHT,
+      TrajectoryMsg::State::IDLE,
+      TrajectoryMsg::State::BACKWARD,
+      TrajectoryMsg::State::FORWARD,
   };
 
-  size_t m_updates = 0;
+  size_t m_updates = 10000;
 };
