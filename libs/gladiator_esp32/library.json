@@ -1,0 +1,17 @@
+{
+    "name": "gladiator_esp32",
+    "version": "0.0.1",
+    "description": "gladiator_esp32",
+    "homepage": "https://exolegend.com",
+	"platforms": [
+        "espressif32"
+    ],
+    "build": {
+        "flags": [
+            "-L.",
+            "-llibhw.a",
+            "-llibgladiator.a"
+        ]
+    },
+	"dependencies": ["WiFi", "EEPROM"]
+}

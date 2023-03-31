@@ -1,0 +1,20 @@
+{
+    "name": "gladiator_x86",
+    "version": "0.0.1",
+    "description": "gladiator_x86",
+    "homepage": "https://exolegend.com",
+	"platforms": [
+        "native"
+    ],
+    "build": {
+        "flags": [
+            "-L.",
+            "-llibhw.a",
+            "-llibgladiator.a",
+            "-llibsioclient.a",
+            "-llibespcore_x86.a"
+        ]
+    },
+	"dependencies": [
+	]
+}
