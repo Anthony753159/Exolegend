@@ -10,10 +10,13 @@ public:
   ~Trajectory();
 
   void HandleMessage(const TrajectoryMsg &msg);
+  bool GOTO(const RobotData &data, const Vector2f &target, float speed);
   void Update(const RobotData &data);
 
 private:
   Gladiator *m_gladiator;
 
   TrajectoryMsg::State m_state;
+
+
 };
