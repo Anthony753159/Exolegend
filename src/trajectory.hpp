@@ -10,6 +10,7 @@ public:
   ~Trajectory();
 
   void HandleMessage(const TrajectoryMsg &msg);
+  bool GOTO(const RobotData &data, const Vector2f &target, float speed);
   void Update(const RobotData &data);
 
   TrajectoryMsg::State GetState() const;
