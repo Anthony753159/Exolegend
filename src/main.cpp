@@ -1,25 +1,40 @@
 #include "gladiator.h"
-Gladiator* gladiator;
+
+#include "strategy.hpp"
+
+#define FREE_MODE true
+
+Gladiator *gladiator;
+Strategy *strategy = nullptr;
+
 void reset();
-void setup() {
-    //instanciation de l'objet gladiator
-    gladiator = new Gladiator();
-    //enregistrement de la fonction de reset qui s'éxecute à chaque fois avant qu'une partie commence
-    gladiator->game->onReset(&reset);
+
+void setup()
+{
+  gladiator = new Gladiator();
+  strategy = new Strategy(gladiator);
+
+  if (FREE_MODE)
+  {
+    gladiator->game->enableFreeMode(RemoteMode::OFF);
+  }
+
+  gladiator->game->onReset(&reset);
 }
 
-void reset() {
-    //fonction de reset:
-    //initialisation de toutes vos variables avant le début d'un match
-    gladiator->log("Appel de la fonction de reset");
+void reset()
+{
+  if (strategy != nullptr)
+  {
+    delete strategy;
+  }
+  strategy = new Strategy(gladiator);
 }
 
-void loop() {
-    if(gladiator->game->isStarted()) { //tester si un match à déjà commencer
-        //code de votre stratégie
-        gladiator->log("Le jeu a commencé");
-    }else {
-        gladiator->log("Le jeu n'a pas encore commencé");
-    }
-    delay(300);
+void loop()
+{
+  if (gladiator->game->isStarted() || FREE_MODE)
+  {
+    strategy->Update();
+  }
 }
