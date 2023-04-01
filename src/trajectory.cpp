@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#define FORCE_REVERSE false
 #define MAX_ANGLE_DIFF (M_PI / 2)
 
 #define WHEEL_TURN_SPEED 0.5f
@@ -107,11 +108,22 @@ bool Trajectory::Goto(const RobotData &data)
 
   /* Checking if we should go backwards instead of forward */
   float angle_diff = AngleDiffRad(target_angle, data.position.a);
-  m_goto_reverse = false;
-  if (Abs(angle_diff) > M_PI / 2)
+
+  if (FORCE_REVERSE)
   {
-    m_goto_reverse = true;
-    angle_diff = AngleDiffRad(target_angle + M_PI, data.position.a);
+    if (m_goto_reverse)
+    {
+      angle_diff = AngleDiffRad(target_angle + M_PI, data.position.a);
+    }
+  }
+  else
+  {
+    m_goto_reverse = false;
+    if (Abs(angle_diff) > M_PI / 2)
+    {
+      m_goto_reverse = true;
+      angle_diff = AngleDiffRad(target_angle + M_PI, data.position.a);
+    }
   }
 
   float forward_speed = 0.0f;
