@@ -2,6 +2,7 @@
 
 #include "gladiator.h"
 #include "comms.hpp"
+#include "algos/common.hpp"
 
 class Strategy
 {
@@ -12,20 +13,15 @@ public:
   TrajectoryMsg Update(const RobotData &data);
 
 private:
+  void InitMaze();
+  void UpdateMaze();
+
   Gladiator *m_gladiator;
 
-  size_t m_state_index;
-  TrajectoryMsg::State m_state_sequence[9] = {
-      TrajectoryMsg::State::IDLE,
-      TrajectoryMsg::State::FORWARD,
-      TrajectoryMsg::State::LEFT,
-      TrajectoryMsg::State::IDLE,
-      TrajectoryMsg::State::FORWARD,
-      TrajectoryMsg::State::RIGHT,
-      TrajectoryMsg::State::IDLE,
-      TrajectoryMsg::State::BACKWARD,
-      TrajectoryMsg::State::FORWARD,
-  };
+  /* Maze */
+  bool m_maze_initialized = false;
+  float m_maze_size;
+  float m_square_size;
 
-  size_t m_updates = 10000;
+  float m_rewards[MAZE_SIZE * MAZE_SIZE] = {0};
 };

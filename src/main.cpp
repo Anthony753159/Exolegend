@@ -3,7 +3,7 @@
 #include "strategy.hpp"
 #include "trajectory.hpp"
 
-#define FREE_MODE true
+#define FREE_MODE false
 
 Gladiator *gladiator;
 Strategy *strategy = nullptr;
@@ -44,18 +44,21 @@ RobotData robot_data;
 
 void loop()
 {
-  if (gladiator->game->isStarted() || FREE_MODE)
+  if (gladiator->game->isStarted())
   {
     robot_data = gladiator->robot->getData();
 
-    TrajectoryMsg msg = strategy->Update(robot_data);
-    if (msg.order != TrajectoryMsg::UNDEFINED)
-    {
-      trajectory->HandleMessage(msg);
-    }
-
     trajectory->Update(robot_data);
 
-    delay(100);
+    if (trajectory->GetState() == TrajectoryMsg::State::IDLE)
+    {
+      TrajectoryMsg msg = strategy->Update(robot_data);
+      if (msg.order != TrajectoryMsg::UNDEFINED)
+      {
+        trajectory->HandleMessage(msg);
+      }
+    }
+
+    delay(10);
   }
 }
