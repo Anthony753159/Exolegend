@@ -31,6 +31,7 @@ private:
   float m_goto_x;
   float m_goto_y;
   float m_goto_angle;
+  bool m_goto_reverse;
   bool m_goto_base_reached;
 
   float m_target_angle;

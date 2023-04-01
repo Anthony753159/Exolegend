@@ -3,14 +3,12 @@
 #include <algorithm>
 
 #define MAX_ANGLE_DIFF (M_PI / 2)
-#define MIN_ANGLE_DIFF (0.01f)
 
-#define WHEEL_TURN_SPEED 0.15f
-#define WHEEL_FORWARD_SPEED 0.12f
+#define WHEEL_TURN_SPEED 0.5f
+#define WHEEL_FORWARD_SPEED 0.5f
 
 #define GOTO_BASE_DISTANCE_THRESHOLD 0.06f
-#define GOTO_TARGET_DISTANCE_THRESHOLD 0.03f
-#define GOTO_DELTA 0.06f
+#define GOTO_DELTA -0.03f
 
 #include <math.h>
 
@@ -31,6 +29,7 @@ void Trajectory::HandleMessage(const TrajectoryMsg &msg)
     m_goto_x = msg.goto_x;
     m_goto_y = msg.goto_y;
     m_goto_angle = msg.goto_angle;
+    m_goto_reverse = msg.goto_reverse;
     m_goto_base_reached = false;
     m_state = TrajectoryMsg::State::GOTO;
     break;
@@ -65,36 +64,54 @@ float Abs(float a)
 
 bool Trajectory::Goto(const RobotData &data)
 {
-  float dx_base = m_goto_x - data.position.x;
-  float dy_base = m_goto_y - data.position.y;
-  float dx_target = m_goto_x + GOTO_DELTA * cos(m_goto_angle) - data.position.x;
-  float dy_target = m_goto_y + GOTO_DELTA * sin(m_goto_angle) - data.position.y;
+  /* Orthogonal distance to target line */
+
+  Vec2f pos = Vec2f{data.position.x, data.position.y};
+  pos.x -= cosf(data.position.a) * 0.02f;
+  pos.y -= sinf(data.position.a) * 0.02f;
+
+  Vec2f p1 = Vec2f{m_goto_x, m_goto_y};
+  Vec2f p2 = Vec2f{m_goto_x + cosf(m_goto_angle), m_goto_y + sinf(m_goto_angle)};
+  float dist_to_line = Abs((p2.x - p1.x) * (p1.y - pos.y) - (p1.x - pos.x) * (p2.y - p1.y)) / sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
+
+  float angle_line_to_robot = atan2f(pos.y - p1.y, pos.x - p1.x);
+  float diff_angle_line_to_robot = AngleDiffRad(m_goto_angle, angle_line_to_robot);
+
+  float target_angle = m_goto_angle + atan(dist_to_line * 10.0f) * (diff_angle_line_to_robot > 0 ? -1.0f : 1.0f);
+
+  float dx_base = m_goto_x - pos.x;
+  float dy_base = m_goto_y - pos.y;
+  float dx_target = m_goto_x + GOTO_DELTA * cos(m_goto_angle) - pos.x;
+  float dy_target = m_goto_y + GOTO_DELTA * sin(m_goto_angle) - pos.y;
 
   float dist_to_base = sqrt(dx_base * dx_base + dy_base * dy_base);
 
-  float dist_to_target = sqrt(dx_target * dx_target + dy_target * dy_target);
   float angle_to_target = atan2f(dy_target, dx_target);
+  float diff_angle_direction = AngleDiffRad(angle_to_target, m_goto_angle);
+
+  bool goto_over = Abs(diff_angle_direction) > M_PI / 2;
 
   /* We reached the base target (center of the cell), or we passed it */
-  if (dist_to_base < GOTO_BASE_DISTANCE_THRESHOLD || dist_to_base >= dist_to_target)
+  if (dist_to_base < GOTO_BASE_DISTANCE_THRESHOLD)
   {
     m_goto_base_reached = true;
   }
 
   /* We reached the target point (after the center of the cell), we go back to idle */
-  if (dist_to_target < GOTO_TARGET_DISTANCE_THRESHOLD)
+  if (goto_over)
   {
+    m_gladiator->log("Goto over, %f %f %f", m_goto_x / 3.0f * 14.0f, m_goto_y / 3.0f * 14.0f, m_goto_angle * 180.0f / M_PI);
     m_goto_base_reached = true;
     return true;
   }
 
   /* Checking if we should go backwards instead of forward */
-  float angle_diff = AngleDiffRad(angle_to_target, data.position.a);
-  bool reverse = false;
+  float angle_diff = AngleDiffRad(target_angle, data.position.a);
+  m_goto_reverse = false;
   if (Abs(angle_diff) > M_PI / 2)
   {
-    angle_diff = AngleDiffRad(angle_to_target + M_PI, data.position.a);
-    reverse = true;
+    m_goto_reverse = true;
+    angle_diff = AngleDiffRad(target_angle + M_PI, data.position.a);
   }
 
   float forward_speed = 0.0f;
@@ -105,18 +122,13 @@ bool Trajectory::Goto(const RobotData &data)
     forward_speed = 0.0f;
     turn_speed = WHEEL_TURN_SPEED * (angle_diff > 0 ? 1.0f : -1.0f);
   }
-  else if (Abs(angle_diff) < MIN_ANGLE_DIFF)
-  {
-    forward_speed = WHEEL_FORWARD_SPEED;
-    turn_speed = 0.0f;
-  }
   else
   {
-    forward_speed = WHEEL_FORWARD_SPEED * (1.0f - (Abs(angle_diff) - MIN_ANGLE_DIFF) / (MAX_ANGLE_DIFF - MIN_ANGLE_DIFF));
-    turn_speed = WHEEL_TURN_SPEED * (angle_diff > 0 ? 1.0f : -1.0f) * (Abs(angle_diff) - MIN_ANGLE_DIFF) / (MAX_ANGLE_DIFF - MIN_ANGLE_DIFF);
+    forward_speed = WHEEL_FORWARD_SPEED * (1.0f - Abs(angle_diff) / MAX_ANGLE_DIFF);
+    turn_speed = WHEEL_TURN_SPEED * (angle_diff > 0 ? 1.0f : -1.0f) * Abs(angle_diff) / MAX_ANGLE_DIFF;
   }
 
-  if (reverse)
+  if (m_goto_reverse)
   {
     forward_speed = -forward_speed;
   }

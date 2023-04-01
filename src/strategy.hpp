@@ -33,4 +33,6 @@ private:
 
   TrajectoryMsg m_next_msg;
   bool m_next_msg_valid = false;
+  bool m_previous_goto_reverse = true;
+  Action m_previous_action = Action::UNDEFINED;
 };

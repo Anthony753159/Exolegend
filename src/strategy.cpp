@@ -41,23 +41,20 @@ void Strategy::Update(const RobotData &data)
   m_state.direction = idir;
   m_state.remaining_slow_down = 0.0f;
   m_state.rewards_we_got = 0;
-  // m_state.wall_hits = 0;
   m_state.SetTime((millis() - m_match_start_time) * 0.001f);
 
   m_gladiator->log("Time: %f, Maze retract: %d, %lu", m_state.time, m_state.maze_retract, millis());
 
-  /*
-    QUESTIONS:
-      How do we get the time in game?
-        > Use system time [Millis]
-      How do we know for how long the slowdown will happen?
-        > 4s + 1s per wall crossed
-      How do we know how much the maze retracted, and when it will retract next?
-        > once every 20s
-  */
-
   Action action = MonteCarloTreeSearch(m_state, m_gladiator);
   int8_t move_dir = -1;
+
+  m_next_msg.goto_reverse = m_previous_goto_reverse;
+  if (action != m_previous_action)
+  {
+    m_next_msg.goto_reverse = !m_next_msg.goto_reverse;
+  }
+  m_previous_action = action;
+  m_previous_goto_reverse = m_next_msg.goto_reverse;
 
   switch (action)
   {
