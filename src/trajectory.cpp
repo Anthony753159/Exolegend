@@ -2,15 +2,16 @@
 
 #include <algorithm>
 
-#define FORCE_REVERSE false
-#define POSITION_SHIFT 0.02f
+#define FORCE_REVERSE true
+#define POSITION_SHIFT 0.03f
 #define MAX_ANGLE_DIFF (M_PI / 2)
 
-#define WHEEL_TURN_SPEED 0.5f
+#define WHEEL_TURN_SPEED_BACKWARD 0.5f
+#define WHEEL_TURN_SPEED_FORWARD 0.7f
 #define WHEEL_FORWARD_SPEED 0.4f
 
 #define GOTO_BASE_DISTANCE_THRESHOLD 0.06f
-#define GOTO_DELTA -0.03f
+#define GOTO_DELTA -0.02f
 
 #include <math.h>
 
@@ -79,7 +80,7 @@ bool Trajectory::Goto(const RobotData &data)
   float angle_line_to_robot = atan2f(pos.y - p1.y, pos.x - p1.x);
   float diff_angle_line_to_robot = AngleDiffRad(m_goto_angle, angle_line_to_robot);
 
-  float target_angle = m_goto_angle + atan(dist_to_line * 10.0f) * (diff_angle_line_to_robot > 0 ? -1.0f : 1.0f);
+  float target_angle = m_goto_angle + atan(dist_to_line * 7.0f) * (diff_angle_line_to_robot > 0 ? -1.0f : 1.0f);
 
   float dx_base = m_goto_x - pos.x;
   float dy_base = m_goto_y - pos.y;
@@ -97,14 +98,6 @@ bool Trajectory::Goto(const RobotData &data)
   if (dist_to_base < GOTO_BASE_DISTANCE_THRESHOLD)
   {
     m_goto_base_reached = true;
-  }
-
-  /* We reached the target point (after the center of the cell), we go back to idle */
-  if (goto_over)
-  {
-    m_gladiator->log("Goto over, %f %f %f", m_goto_x / 3.0f * 14.0f, m_goto_y / 3.0f * 14.0f, m_goto_angle * 180.0f / M_PI);
-    m_goto_base_reached = true;
-    return true;
   }
 
   /* Checking if we should go backwards instead of forward */
@@ -130,27 +123,27 @@ bool Trajectory::Goto(const RobotData &data)
   float forward_speed = 0.0f;
   float turn_speed = 0.0f;
 
-  if (Abs(angle_diff) > MAX_ANGLE_DIFF)
+  forward_speed = WHEEL_FORWARD_SPEED * (1.0f - Abs(angle_diff) / MAX_ANGLE_DIFF);
+  if (m_goto_base_reached)
   {
-    forward_speed = 0.0f;
-    turn_speed = WHEEL_TURN_SPEED * (angle_diff > 0 ? 1.0f : -1.0f);
+    forward_speed *= 0.5f;
   }
-  else
-  {
-    forward_speed = WHEEL_FORWARD_SPEED * (1.0f - Abs(angle_diff) / MAX_ANGLE_DIFF);
-    turn_speed = WHEEL_TURN_SPEED * (angle_diff > 0 ? 1.0f : -1.0f) * Abs(angle_diff) / MAX_ANGLE_DIFF;
-  }
+
+  turn_speed = (m_goto_reverse ? WHEEL_TURN_SPEED_BACKWARD : WHEEL_TURN_SPEED_FORWARD) * (angle_diff > 0 ? 1.0f : -1.0f) * Abs(angle_diff) / MAX_ANGLE_DIFF;
+
+  float reduction_factor = std::fmin(data.speedLimit, WHEEL_FORWARD_SPEED) / WHEEL_FORWARD_SPEED;
 
   if (m_goto_reverse)
   {
     forward_speed = -forward_speed;
   }
 
-  float left_speed = forward_speed + turn_speed;
-  float right_speed = forward_speed - turn_speed;
-  m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, left_speed);
-  m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, right_speed);
-  return false;
+  float left_speed = reduction_factor * (forward_speed + turn_speed);
+  float right_speed = reduction_factor * (forward_speed - turn_speed);
+  m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, left_speed, goto_over);
+  m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, right_speed, goto_over);
+
+  return goto_over;
 }
 
 void Trajectory::Update(const RobotData &data)
