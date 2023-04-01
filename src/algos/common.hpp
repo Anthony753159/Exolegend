@@ -6,12 +6,18 @@
 #include "comms.hpp"
 
 #define GAME_DURATION 120.0f
+
 #define TIME_ONE_CELL_FULL_SPEED 1.0f
 #define TIME_TURN 1.0f
+
 #define RETRACT_PERIOD 20.0f
 #define SLOWDOWN_FACTOR 10.0f
 #define BASE_SLOWDOWN_DURATION 4.0f
 #define PER_HIT_SLOWDOWN_DURATION 1.0f
+
+#define N_ROBOTS 4
+#define FORBID_WALL_HITS true
+#define ALLOW_WALL_HITS_IF_BLOCKED true
 
 struct MazeWalls
 {
@@ -26,6 +32,9 @@ struct MazeWalls
 
   /* Walls we encounter when we walk vertically */
   bool vertical_walls[MAZE_SIZE * (MAZE_SIZE - 1)] = {0};
+
+  /* Visit map used when computing paths */
+  bool visit_map[MAZE_SIZE * MAZE_SIZE] = {false};
 
   bool IsWall(int8_t x, int8_t y, int8_t direction) const
   {
@@ -44,8 +53,11 @@ struct MazeWalls
     return false;
   }
 
+  bool HasPathToCenter(int8_t x, int8_t y, int8_t r);
+
 private:
   MazeWalls() {}
+  bool LookForPath(int8_t x, int8_t y, int8_t tx, int8_t ty, int8_t r);
 };
 
 enum Action
