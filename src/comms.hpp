@@ -30,6 +30,7 @@ struct TrajectoryMsg
   // ORDER_GOTO
   float goto_x;
   float goto_y;
+  float goto_angle;
 
   // ORDER_SET_STATE
   State state;

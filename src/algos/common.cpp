@@ -208,6 +208,7 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
   hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, new_state.direction);
   if (hit_a_wall)
   {
+    return std::nullopt;
     new_state.remaining_slow_down = BASE_SLOWDOWN_DURATION + new_state.wall_hits * PER_HIT_SLOWDOWN_DURATION;
     new_state.wall_hits++;
   }

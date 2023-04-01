@@ -2,14 +2,15 @@
 
 #include <algorithm>
 
-#define MAX_ANGLE_DIFF (M_PI / 2 - M_PI / 8)
-#define MIN_ANGLE_DIFF (M_PI / 10)
+#define MAX_ANGLE_DIFF (M_PI / 2)
+#define MIN_ANGLE_DIFF (0.01f)
 
-#define WHEEL_TURN_SPEED 0.3
-#define WHEEL_FORWARD_SPEED 0.5
+#define WHEEL_TURN_SPEED 0.15f
+#define WHEEL_FORWARD_SPEED 0.12f
 
-#define GOTO_DISTANCE_THRESHOLD 0.03
-#define GOTO_ANGLE_THRESHOLD 0.1
+#define GOTO_BASE_DISTANCE_THRESHOLD 0.06f
+#define GOTO_TARGET_DISTANCE_THRESHOLD 0.03f
+#define GOTO_DELTA 0.06f
 
 #include <math.h>
 
@@ -29,6 +30,8 @@ void Trajectory::HandleMessage(const TrajectoryMsg &msg)
   case TrajectoryMsg::ORDER_GOTO:
     m_goto_x = msg.goto_x;
     m_goto_y = msg.goto_y;
+    m_goto_angle = msg.goto_angle;
+    m_goto_base_reached = false;
     m_state = TrajectoryMsg::State::GOTO;
     break;
   case TrajectoryMsg::ORDER_SET_STATE:
@@ -59,66 +62,38 @@ float Abs(float a)
 {
   return a < 0 ? -a : a;
 }
-/*
-bool Trajectory::GOTO(const RobotData &data, const Vec2f &target, float speed)
+
+bool Trajectory::Goto(const RobotData &data)
 {
-// calcul des composantes x et y du vecteur de déplacement
-float dx = target.x - data.position.x;
-float dy = target.y - data.position.y;
-float distance = sqrt(dx * dx + dy * dy); // distance entre la position actuelle et la cible
-float angle_rad = atan2f(dy, dx);         // angle en radians entre la position actuelle et la cible
+  float dx_base = m_goto_x - data.position.x;
+  float dy_base = m_goto_y - data.position.y;
+  float dx_target = m_goto_x + GOTO_DELTA * cos(m_goto_angle) - data.position.x;
+  float dy_target = m_goto_y + GOTO_DELTA * sin(m_goto_angle) - data.position.y;
 
-// Vérifier si la distance est suffisamment faible
-if (distance < GOTO_DISTANCE_THRESHOLD)
-{
-  m_gladiator->control->setWheelSpeed(0, 0);
-return true;
-}
+  float dist_to_base = sqrt(dx_base * dx_base + dy_base * dy_base);
 
-// calculer la vitesse de rotation de chaque roue en fonction de l'angle actuel et de l'angle cible
-float angle_diff = angle_rad - data.position.a;
-if (angle_diff > M_PI) {
-angle_diff -= 2 * M_PI;
-} else if (angle_diff < -M_PI) {
-angle_diff += 2 * M_PI;
-}
-float rotation_speed = WHEEL_ROTATION_SPEED * angle_diff;
+  float dist_to_target = sqrt(dx_target * dx_target + dy_target * dy_target);
+  float angle_to_target = atan2f(dy_target, dx_target);
 
-// calculer la vitesse de translation de chaque roue en fonction de la vitesse de rotation et de la vitesse cible
-float left_speed = speed - rotation_speed;
-float right_speed = speed + rotation_speed;
-
-// régler la vitesse de chaque roue
-m_gladiator->control->setWheelSpeed(left_speed, right_speed);
-
-// mettre à jour l'angle du robot
-data.position.a = angle_rad;
-
-return false;
-}
-*/
-
-bool Trajectory::GOTO(const RobotData &data, const Vec2f &target, float speed)
-{
-  // calcul des composantes x et y du vecteur de déplacement
-  float dx = target.x - data.position.x;
-  float dy = target.y - data.position.y;
-  float distance = sqrt(dx * dx + dy * dy); // distance entre la position actuelle et la cible
-  float angle_rad = atan2f(dy, dx);         // angle en radians entre la position actuelle et la cible
-
-  // Vérifier si la distance est suffisamment faible
-  if (distance < GOTO_DISTANCE_THRESHOLD)
+  /* We reached the base target (center of the cell), or we passed it */
+  if (dist_to_base < GOTO_BASE_DISTANCE_THRESHOLD || dist_to_base >= dist_to_target)
   {
+    m_goto_base_reached = true;
+  }
+
+  /* We reached the target point (after the center of the cell), we go back to idle */
+  if (dist_to_target < GOTO_TARGET_DISTANCE_THRESHOLD)
+  {
+    m_goto_base_reached = true;
     return true;
   }
 
-  // ajuster la vitesse des roues pour tourner et avancer simultanément
-  float angle_diff = AngleDiffRad(angle_rad, data.position.a);
-
+  /* Checking if we should go backwards instead of forward */
+  float angle_diff = AngleDiffRad(angle_to_target, data.position.a);
   bool reverse = false;
   if (Abs(angle_diff) > M_PI / 2)
   {
-    angle_diff = AngleDiffRad(angle_rad + M_PI, data.position.a);
+    angle_diff = AngleDiffRad(angle_to_target + M_PI, data.position.a);
     reverse = true;
   }
 
@@ -184,8 +159,7 @@ void Trajectory::Update(const RobotData &data)
 
   case TrajectoryMsg::State::GOTO:
   {
-    Vec2f target{m_goto_x, m_goto_y};
-    if (GOTO(data, target, WHEEL_FORWARD_SPEED))
+    if (Goto(data))
     {
       m_state = TrajectoryMsg::State::IDLE;
     }
@@ -237,6 +211,11 @@ void Trajectory::Update(const RobotData &data)
   }
   break;
   }
+}
+
+bool Trajectory::GotoBaseReached() const
+{
+  return m_goto_base_reached;
 }
 
 TrajectoryMsg::State Trajectory::GetState() const

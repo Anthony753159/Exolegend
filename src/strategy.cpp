@@ -10,15 +10,13 @@ Strategy::~Strategy()
 {
 }
 
-TrajectoryMsg Strategy::Update(const RobotData &data)
+void Strategy::Update(const RobotData &data)
 {
   if (!m_maze_initialized)
   {
     InitMaze();
   }
   UpdateMaze();
-
-  TrajectoryMsg msg;
 
   int8_t ix = (int8_t)(data.position.x / m_square_size);
   int8_t iy = (int8_t)(data.position.y / m_square_size);
@@ -65,33 +63,37 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
   {
   case Action::MOVE_NORTH:
     m_gladiator->log("MOVE_NORTH");
-    msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = m_state.GetNorth().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = m_state.GetNorth().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.order = TrajectoryMsg::ORDER_GOTO;
+    m_next_msg.goto_x = m_state.GetNorth().x * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_y = m_state.GetNorth().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_angle = M_PI / 2;
     move_dir = 0;
     break;
 
   case Action::MOVE_EAST:
     m_gladiator->log("MOVE_EAST");
-    msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = m_state.GetEast().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = m_state.GetEast().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.order = TrajectoryMsg::ORDER_GOTO;
+    m_next_msg.goto_x = m_state.GetEast().x * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_y = m_state.GetEast().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_angle = 0;
     move_dir = 1;
     break;
 
   case Action::MOVE_SOUTH:
     m_gladiator->log("MOVE_SOUTH");
-    msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = m_state.GetSouth().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = m_state.GetSouth().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.order = TrajectoryMsg::ORDER_GOTO;
+    m_next_msg.goto_x = m_state.GetSouth().x * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_y = m_state.GetSouth().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_angle = -M_PI / 2;
     move_dir = 2;
     break;
 
   case Action::MOVE_WEST:
     m_gladiator->log("MOVE_WEST");
-    msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = m_state.GetWest().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = m_state.GetWest().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.order = TrajectoryMsg::ORDER_GOTO;
+    m_next_msg.goto_x = m_state.GetWest().x * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_y = m_state.GetWest().y * m_square_size + 0.5f * m_square_size;
+    m_next_msg.goto_angle = M_PI;
     move_dir = 3;
     break;
 
@@ -107,7 +109,22 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
     }
   }
 
-  return msg;
+  m_next_msg_valid = true;
+}
+
+TrajectoryMsg Strategy::GetNextMsg() const
+{
+  return m_next_msg;
+}
+
+bool Strategy::IsNextMsgValid() const
+{
+  return m_next_msg_valid;
+}
+
+void Strategy::ConsumeMsg()
+{
+  m_next_msg_valid = false;
 }
 
 void Strategy::InitMaze()

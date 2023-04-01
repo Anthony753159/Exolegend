@@ -50,9 +50,18 @@ void loop()
 
     trajectory->Update(robot_data);
 
+    if (trajectory->GotoBaseReached() || trajectory->GetState() == TrajectoryMsg::State::IDLE)
+    {
+      if (!strategy->IsNextMsgValid())
+      {
+        strategy->Update(robot_data);
+      }
+    }
+
     if (trajectory->GetState() == TrajectoryMsg::State::IDLE)
     {
-      TrajectoryMsg msg = strategy->Update(robot_data);
+      TrajectoryMsg msg = strategy->GetNextMsg();
+      strategy->ConsumeMsg();
       if (msg.order != TrajectoryMsg::UNDEFINED)
       {
         trajectory->HandleMessage(msg);
