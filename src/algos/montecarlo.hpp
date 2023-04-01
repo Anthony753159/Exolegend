@@ -14,4 +14,4 @@
 #define SEARCH_DEPTH 200
 #define SEARCH_PATHS 256
 
-Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator);
+Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t playing_robot);

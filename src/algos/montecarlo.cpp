@@ -3,7 +3,7 @@
 
 #include <map>
 
-Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
+Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t playing_robot)
 {
   std::map<Action, int> counts_by_action;
   std::map<Action, float> scores_by_action;
@@ -30,7 +30,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
   {
     Action first_action = start.GetRandomAction(Action::UNDEFINED);
     GameState current_state = start;
-    std::optional<GameState> next_state = start.ApplyAction(first_action);
+    std::optional<GameState> next_state = start.ApplyAction(first_action, playing_robot);
     Action previous_action = first_action;
 
     if (!next_state.has_value())

@@ -12,6 +12,7 @@
 #define SLOWDOWN_FACTOR 10.0f
 #define BASE_SLOWDOWN_DURATION 4.0f
 #define PER_HIT_SLOWDOWN_DURATION 1.0f
+#define N_ROBOTS 4
 
 struct MazeWalls
 {
@@ -63,28 +64,15 @@ struct Vec2
   int8_t y;
 };
 
-struct GameState
+struct RobotState
 {
-  /* State */
-  float time = 0.0f;
-  int8_t maze_retract = 0;
-  float rewards[MAZE_SIZE * MAZE_SIZE] = {0};
-  float sum_of_rewards = 0;
-  float rewards_we_got = 0;
-
+  Action current_action = Action::UNDEFINED;
+  float next_action_time = 0.0f;
+  bool ally = true;
   Vec2 pos = {0, 0};
   int8_t direction = 0;
-
   float remaining_slow_down = 0.0f;
   int wall_hits = 0;
-
-  GameState();
-  GameState(const GameState &other);
-
-  void SetTime(float t);
-
-  bool operator==(const GameState &other) const;
-  bool IsGoal() const;
 
   Vec2 GetNorth() const;
   Vec2 GetEast() const;
@@ -97,9 +85,30 @@ struct GameState
   int8_t GetDirectionRight() const;
   int8_t GetDirectionLeft() const;
   int8_t GetDirectionBackward() const;
+};
+
+struct GameState
+{
+  /* State */
+  float time = 0.0f;
+  int8_t maze_retract = 0;
+  float rewards[MAZE_SIZE * MAZE_SIZE] = {0};
+  float sum_of_rewards = 0;
+  float rewards_we_got = 0;
+
+  /* Robots */
+  RobotState robots[N_ROBOTS] = {{}, {}};
+
+  GameState();
+  GameState(const GameState &other);
+
+  void SetTime(float t);
+
+  bool IsGoal() const;
 
   bool IsInsideBounds(const Vec2 &vec) const;
   Action GetRandomAction(Action previous_action) const;
 
   std::optional<GameState> ApplyAction(Action action) const;
+  std::optional<GameState> ApplyAction(Action action, size_t playing_robot) const;
 };

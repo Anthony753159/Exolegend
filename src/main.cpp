@@ -41,12 +41,19 @@ void reset()
 }
 
 RobotData robot_data;
+RobotList robot_list;
+RobotData other_robots_data[N_ROBOTS];
 
 void loop()
 {
   if (gladiator->game->isStarted())
   {
     robot_data = gladiator->robot->getData();
+    robot_list = gladiator->game->getPlayingRobotsId();
+    for (size_t i = 0; i < N_ROBOTS; i++)
+    {
+      other_robots_data[i] = gladiator->game->getOtherRobotData(robot_list.ids[i]);
+    }
 
     trajectory->Update(robot_data);
 
@@ -54,7 +61,7 @@ void loop()
     {
       if (!strategy->IsNextMsgValid())
       {
-        strategy->Update(robot_data);
+        strategy->Update(robot_data, other_robots_data, robot_list);
       }
     }
 

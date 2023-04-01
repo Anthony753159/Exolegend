@@ -3,7 +3,6 @@
 #include "gladiator.h"
 #include "comms.hpp"
 #include "algos/common.hpp"
-#include "algos/astar.hpp"
 #include "algos/montecarlo.hpp"
 
 class Strategy
@@ -12,7 +11,7 @@ public:
   Strategy(Gladiator *gladiator);
   ~Strategy();
 
-  void Update(const RobotData &data);
+  void Update(const RobotData &data, const RobotData *others_data, const RobotList &list);
   TrajectoryMsg GetNextMsg() const;
 
   bool IsNextMsgValid() const;
