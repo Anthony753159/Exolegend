@@ -12,7 +12,11 @@ public:
   Strategy(Gladiator *gladiator);
   ~Strategy();
 
-  TrajectoryMsg Update(const RobotData &data);
+  void Update(const RobotData &data);
+  TrajectoryMsg GetNextMsg() const;
+
+  bool IsNextMsgValid() const;
+  void ConsumeMsg();
 
 private:
   void InitMaze();
@@ -26,4 +30,9 @@ private:
 
   GameState m_state;
   unsigned long m_match_start_time;
+
+  TrajectoryMsg m_next_msg;
+  bool m_next_msg_valid = false;
+  bool m_previous_goto_reverse = true;
+  Action m_previous_action = Action::UNDEFINED;
 };

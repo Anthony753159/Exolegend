@@ -16,8 +16,10 @@ public:
   ~Trajectory();
 
   void HandleMessage(const TrajectoryMsg &msg);
-  bool Goto(const RobotData &data, const Vec2f &target, float speed);
+  bool Goto(const RobotData &data);
   void Update(const RobotData &data);
+
+  bool GotoBaseReached() const;
 
   TrajectoryMsg::State GetState() const;
 
@@ -28,6 +30,9 @@ private:
 
   float m_goto_x;
   float m_goto_y;
+  float m_goto_angle;
+  bool m_goto_reverse;
+  bool m_goto_base_reached;
 
   float m_target_angle;
 
