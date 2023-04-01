@@ -3,10 +3,11 @@
 #include <algorithm>
 
 #define FORCE_REVERSE false
+#define POSITION_SHIFT 0.02f
 #define MAX_ANGLE_DIFF (M_PI / 2)
 
 #define WHEEL_TURN_SPEED 0.5f
-#define WHEEL_FORWARD_SPEED 0.5f
+#define WHEEL_FORWARD_SPEED 0.4f
 
 #define GOTO_BASE_DISTANCE_THRESHOLD 0.06f
 #define GOTO_DELTA -0.03f
@@ -68,8 +69,8 @@ bool Trajectory::Goto(const RobotData &data)
   /* Orthogonal distance to target line */
 
   Vec2f pos = Vec2f{data.position.x, data.position.y};
-  pos.x -= cosf(data.position.a) * 0.02f;
-  pos.y -= sinf(data.position.a) * 0.02f;
+  pos.x -= cosf(data.position.a) * POSITION_SHIFT;
+  pos.y -= sinf(data.position.a) * POSITION_SHIFT;
 
   Vec2f p1 = Vec2f{m_goto_x, m_goto_y};
   Vec2f p2 = Vec2f{m_goto_x + cosf(m_goto_angle), m_goto_y + sinf(m_goto_angle)};
