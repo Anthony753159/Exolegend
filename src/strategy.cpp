@@ -16,7 +16,6 @@ Strategy::~Strategy()
 
 TrajectoryMsg Strategy::Update(const RobotData &data)
 {
-  delay(1000);
   m_gladiator->log("Updating strategy");
 
   if (!m_maze_initialized)
@@ -77,28 +76,34 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
 
   switch (action)
   {
-  case Action::MOVE_FORWARD:
-    m_gladiator->log("MOVE_FORWARD");
-    msg.order = TrajectoryMsg::ORDER_MOVE_DISTANCE;
-    msg.distance = m_square_size;
-    msg.forward = true;
+  case Action::MOVE_NORTH:
+    m_gladiator->log("MOVE_NORTH");
+    msg.order = TrajectoryMsg::ORDER_GOTO;
+    msg.goto_x = start.GetNorth().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = start.GetNorth().y * m_square_size + 0.5f * m_square_size;
     break;
-  case Action::MOVE_BACKWARD:
-    m_gladiator->log("MOVE_BACKWARD");
-    msg.order = TrajectoryMsg::ORDER_MOVE_DISTANCE;
-    msg.distance = m_square_size;
-    msg.forward = false;
+
+  case Action::MOVE_EAST:
+    m_gladiator->log("MOVE_EAST");
+    msg.order = TrajectoryMsg::ORDER_GOTO;
+    msg.goto_x = start.GetEast().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = start.GetEast().y * m_square_size + 0.5f * m_square_size;
     break;
-  case Action::TURN_LEFT:
-    m_gladiator->log("TURN_LEFT");
-    msg.order = TrajectoryMsg::ORDER_ROTATE;
-    msg.angle = (1 - start.GetDirectionLeft()) * M_PI / 2.0f;
+
+  case Action::MOVE_SOUTH:
+    m_gladiator->log("MOVE_SOUTH");
+    msg.order = TrajectoryMsg::ORDER_GOTO;
+    msg.goto_x = start.GetSouth().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = start.GetSouth().y * m_square_size + 0.5f * m_square_size;
     break;
-  case Action::TURN_RIGHT:
-    m_gladiator->log("TURN_RIGHT");
-    msg.order = TrajectoryMsg::ORDER_ROTATE;
-    msg.angle = (1 - start.GetDirectionRight()) * M_PI / 2.0f;
+
+  case Action::MOVE_WEST:
+    m_gladiator->log("MOVE_WEST");
+    msg.order = TrajectoryMsg::ORDER_GOTO;
+    msg.goto_x = start.GetWest().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = start.GetWest().y * m_square_size + 0.5f * m_square_size;
     break;
+
   case Action::UNDEFINED:
     break;
   }
@@ -111,9 +116,9 @@ void Strategy::InitMaze()
   m_maze_size = m_gladiator->maze->getSize();
   m_square_size = m_gladiator->maze->getSquareSize();
 
-  for (size_t x = 0; x < MAZE_SIZE; x++)
+  for (size_t y = 0; y < MAZE_SIZE; y++)
   {
-    for (size_t y = 0; y < MAZE_SIZE; y++)
+    for (size_t x = 0; x < MAZE_SIZE; x++)
     {
       MazeSquare sqr = m_gladiator->maze->getSquare(x, y);
 
@@ -121,11 +126,11 @@ void Strategy::InitMaze()
 
       if (x < MAZE_SIZE - 1)
       {
-        MazeWalls::GetInstance()->horizontal_walls[x + y * (MAZE_SIZE - 1)] = sqr.eastSquare != nullptr;
+        MazeWalls::GetInstance()->horizontal_walls[x + y * (MAZE_SIZE - 1)] = sqr.eastSquare == nullptr;
       }
       if (y < MAZE_SIZE - 1)
       {
-        MazeWalls::GetInstance()->vertical_walls[x + y * MAZE_SIZE] = sqr.southSquare != nullptr;
+        MazeWalls::GetInstance()->vertical_walls[x + y * MAZE_SIZE] = sqr.northSquare == nullptr;
       }
     }
   }
@@ -142,15 +147,6 @@ void Strategy::UpdateMaze()
       MazeSquare sqr = m_gladiator->maze->getSquare(x, y);
 
       m_rewards[x + y * MAZE_SIZE] = sqr.coin.value;
-
-      if (x < MAZE_SIZE - 1)
-      {
-        MazeWalls::GetInstance()->horizontal_walls[x + y * (MAZE_SIZE - 1)] = sqr.eastSquare != nullptr;
-      }
-      if (y < MAZE_SIZE - 1)
-      {
-        MazeWalls::GetInstance()->vertical_walls[x + y * MAZE_SIZE] = sqr.southSquare != nullptr;
-      }
     }
   }
 }

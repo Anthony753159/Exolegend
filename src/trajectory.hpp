@@ -3,6 +3,12 @@
 #include "gladiator.h"
 #include "comms.hpp"
 
+struct Vec2f
+{
+  float x;
+  float y;
+};
+
 class Trajectory
 {
 public:
@@ -10,7 +16,7 @@ public:
   ~Trajectory();
 
   void HandleMessage(const TrajectoryMsg &msg);
-  bool GOTO(const RobotData &data, const Vector2f &target, float speed);
+  bool Goto(const RobotData &data, const Vec2f &target, float speed);
   void Update(const RobotData &data);
 
   TrajectoryMsg::State GetState() const;
@@ -19,6 +25,9 @@ private:
   Gladiator *m_gladiator;
 
   TrajectoryMsg::State m_state;
+
+  float m_goto_x;
+  float m_goto_y;
 
   float m_target_angle;
 

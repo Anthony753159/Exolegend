@@ -3,7 +3,10 @@
 #include <algorithm>
 
 #define WHEEL_TURN_SPEED 0.05
-#define WHEEL_FORWARD_SPEED 0.2
+#define WHEEL_FORWARD_SPEED 0.4
+
+#define GOTO_DISTANCE_THRESHOLD 0.03
+#define GOTO_ANGLE_THRESHOLD 0.1
 
 #include <math.h>
 
@@ -20,10 +23,12 @@ void Trajectory::HandleMessage(const TrajectoryMsg &msg)
 {
   switch (msg.order)
   {
-  case TrajectoryMsg::GOTO:
-
+  case TrajectoryMsg::ORDER_GOTO:
+    m_goto_x = msg.goto_x;
+    m_goto_y = msg.goto_y;
+    m_state = TrajectoryMsg::State::GOTO;
     break;
-  case TrajectoryMsg::SET_STATE:
+  case TrajectoryMsg::ORDER_SET_STATE:
     m_state = msg.state;
     break;
   case TrajectoryMsg::ORDER_ROTATE:
@@ -44,16 +49,7 @@ void Trajectory::HandleMessage(const TrajectoryMsg &msg)
 
 float AngleDiffRad(float from, float to)
 {
-  float diff = std::fmod(to - from, 2 * M_PI);
-  if (diff > M_PI)
-  {
-    diff -= 2 * M_PI;
-  }
-  else if (diff < -M_PI)
-  {
-    diff += 2 * M_PI;
-  }
-  return diff;
+  return atan2(sin(to - from), cos(to - from));
 }
 
 float Abs(float a)
@@ -61,18 +57,16 @@ float Abs(float a)
   return a < 0 ? -a : a;
 }
 
-bool Trajectory::Goto(const RobotData &data, const Vector2f &target, float speed)
+bool Trajectory::Goto(const RobotData &data, const Vec2f &target, float speed)
 {
-  Vector2f pos = data.position; // position actuelle du robot
-
   // calcul des composantes x et y du vecteur de déplacement
-  float dx = target.x - pos.x;
-  float dy = target.y - pos.y;
+  float dx = target.x - data.position.x;
+  float dy = target.y - data.position.y;
   float distance = sqrt(dx * dx + dy * dy); // distance entre la position actuelle et la cible
   float angle_rad = atan2f(dy, dx);         // angle en radians entre la position actuelle et la cible
 
   // Vérifier si la distance est suffisamment faible et régler la vitesse des roues en conséquence
-  if (distance < DISTANCE_THRESHOLD)
+  if (distance < GOTO_DISTANCE_THRESHOLD)
   {
     m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, 0);
     m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0);
@@ -80,18 +74,25 @@ bool Trajectory::Goto(const RobotData &data, const Vector2f &target, float speed
   }
 
   // Vérifier si l'angle actuel est proche de l'angle désiré
-  float angle_diff = Abs(AngleDiffRad(angle_rad, data.position.a));
-  if (angle_diff > ANGLE_THRESHOLD)
+  float angle_diff = AngleDiffRad(angle_rad, data.position.a);
+  bool reverse = false;
+  if (angle_diff > 0.8 * M_PI / 2 || angle_diff < -0.8 * M_PI / 2)
+  {
+    reverse = true;
+    angle_diff = std::fmod(angle_diff + M_PI, 2 * M_PI) - M_PI;
+  }
+
+  if (Abs(angle_diff) > GOTO_ANGLE_THRESHOLD)
   {
     // Si l'angle est trop différent, recalculer l'angle
-    m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, speed);
-    m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, -speed);
+    m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, WHEEL_TURN_SPEED * (angle_diff > 0 ? 1 : -1));
+    m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, -WHEEL_TURN_SPEED * (angle_diff > 0 ? 1 : -1));
   }
   else
   {
     // Si l'angle est proche, effectuer le déplacement
-    m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, speed);
-    m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, speed);
+    m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, WHEEL_FORWARD_SPEED * (reverse ? -1 : 1));
+    m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, WHEEL_FORWARD_SPEED * (reverse ? -1 : 1));
   }
 
   return false;
@@ -125,6 +126,18 @@ void Trajectory::Update(const RobotData &data)
     m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, -WHEEL_TURN_SPEED);
     m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, WHEEL_TURN_SPEED);
     break;
+
+  case TrajectoryMsg::State::GOTO:
+  {
+    Vec2f target{m_goto_x, m_goto_y};
+    if (Goto(data, target, WHEEL_FORWARD_SPEED))
+    {
+      m_state = TrajectoryMsg::State::IDLE;
+      m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0);
+      m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, 0);
+    }
+    break;
+  }
 
   case TrajectoryMsg::State::ROTATE:
   {

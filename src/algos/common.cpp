@@ -40,6 +40,34 @@ bool GameState::IsGoal() const
   return sum_of_rewards <= 0 || maze_retract >= 7;
 }
 
+Vec2 GameState::GetNorth() const
+{
+  Vec2 north = pos;
+  north.y++;
+  return north;
+}
+
+Vec2 GameState::GetEast() const
+{
+  Vec2 east = pos;
+  east.x++;
+  return east;
+}
+
+Vec2 GameState::GetSouth() const
+{
+  Vec2 south = pos;
+  south.y--;
+  return south;
+}
+
+Vec2 GameState::GetWest() const
+{
+  Vec2 west = pos;
+  west.x--;
+  return west;
+}
+
 Vec2 GameState::GetForward() const
 {
   Vec2 forward = pos;
@@ -111,26 +139,18 @@ bool GameState::IsInsideBounds(const Vec2 &vec) const
 
 Action GameState::GetRandomAction(Action previous_action) const
 {
-  int8_t rand_index = 0;
-  if (previous_action == TURN_LEFT || previous_action == TURN_RIGHT)
-  {
-    rand_index = random() % 2;
-  }
-  else
-  {
-    rand_index = random() % 4;
-  }
+  int8_t rand_index = random() % 4;
 
   switch (rand_index)
   {
   case 0:
-    return MOVE_FORWARD;
+    return MOVE_NORTH;
   case 1:
-    return MOVE_BACKWARD;
+    return MOVE_EAST;
   case 2:
-    return TURN_LEFT;
+    return MOVE_SOUTH;
   case 3:
-    return TURN_RIGHT;
+    return MOVE_WEST;
   }
 
   return UNDEFINED;
@@ -145,23 +165,25 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
 
   switch (action)
   {
-  case TURN_LEFT:
-    new_state.direction = GetDirectionLeft();
-    action_time = TIME_TURN;
+  case MOVE_NORTH:
+    new_state.pos = GetNorth();
+    new_state.direction = 0;
+    action_time = TIME_ONE_CELL_FULL_SPEED + (direction == 0 ? 0 : TIME_TURN);
     break;
-  case TURN_RIGHT:
-    new_state.direction = GetDirectionRight();
-    action_time = TIME_TURN;
+  case MOVE_EAST:
+    new_state.pos = GetEast();
+    new_state.direction = 1;
+    action_time = TIME_ONE_CELL_FULL_SPEED + (direction == 0 ? 0 : TIME_TURN);
     break;
-  case MOVE_FORWARD:
-    new_state.pos = GetForward();
-    hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, direction);
-    action_time = TIME_ONE_CELL_FULL_SPEED;
+  case MOVE_SOUTH:
+    new_state.pos = GetSouth();
+    new_state.direction = 2;
+    action_time = TIME_ONE_CELL_FULL_SPEED + (direction == 0 ? 0 : TIME_TURN);
     break;
-  case MOVE_BACKWARD:
-    new_state.pos = GetBackward();
-    hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, GetDirectionBackward());
-    action_time = TIME_ONE_CELL_FULL_SPEED;
+  case MOVE_WEST:
+    new_state.pos = GetWest();
+    new_state.direction = 3;
+    action_time = TIME_ONE_CELL_FULL_SPEED + (direction == 0 ? 0 : TIME_TURN);
     break;
   case UNDEFINED:
     break;
@@ -172,6 +194,7 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
     return std::nullopt;
   }
 
+  hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, new_state.direction);
   if (hit_a_wall)
   {
     new_state.remaining_slow_down = BASE_SLOWDOWN_DURATION + new_state.wall_hits * PER_HIT_SLOWDOWN_DURATION;
@@ -184,7 +207,7 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
   float reward_there = rewards[new_state.pos.x + new_state.pos.y * MAZE_SIZE];
   new_state.rewards[new_state.pos.x + new_state.pos.y * MAZE_SIZE] = 0;
   new_state.sum_of_rewards -= reward_there;
-  new_state.rewards_we_got += reward_there;
+  new_state.rewards_we_got += reward_there - (hit_a_wall ? 1.5f : 0.0f);
 
   return new_state;
 }

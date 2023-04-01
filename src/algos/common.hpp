@@ -50,10 +50,10 @@ private:
 enum Action
 {
   UNDEFINED,
-  TURN_LEFT,
-  TURN_RIGHT,
-  MOVE_FORWARD,
-  MOVE_BACKWARD
+  MOVE_NORTH,
+  MOVE_EAST,
+  MOVE_SOUTH,
+  MOVE_WEST,
 };
 
 struct Vec2
@@ -81,6 +81,11 @@ struct GameState
   GameState(const GameState &other);
   bool operator==(const GameState &other) const;
   bool IsGoal() const;
+
+  Vec2 GetNorth() const;
+  Vec2 GetEast() const;
+  Vec2 GetSouth() const;
+  Vec2 GetWest() const;
 
   Vec2 GetForward() const;
   Vec2 GetBackward() const;
