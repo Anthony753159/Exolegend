@@ -12,6 +12,6 @@
 #include "comms.hpp"
 
 #define SEARCH_DEPTH 200
-#define SEARCH_PATHS 4096
+#define SEARCH_PATHS 256
 
 Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator);

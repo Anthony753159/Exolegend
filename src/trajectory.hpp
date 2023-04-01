@@ -16,7 +16,7 @@ public:
   ~Trajectory();
 
   void HandleMessage(const TrajectoryMsg &msg);
-  bool GOTO(const RobotData &data, const Vec2f &target, float speed);
+  bool Goto(const RobotData &data, const Vec2f &target, float speed);
   void Update(const RobotData &data);
 
   TrajectoryMsg::State GetState() const;
