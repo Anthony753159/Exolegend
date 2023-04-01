@@ -58,7 +58,5 @@ void loop()
         trajectory->HandleMessage(msg);
       }
     }
-
-    delay(10);
   }
 }

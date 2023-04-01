@@ -5,8 +5,9 @@
 
 #include "comms.hpp"
 
+#define GAME_DURATION 120.0f
 #define TIME_ONE_CELL_FULL_SPEED 1.0f
-#define TIME_TURN 0.5f
+#define TIME_TURN 1.0f
 #define RETRACT_PERIOD 20.0f
 #define SLOWDOWN_FACTOR 10.0f
 #define BASE_SLOWDOWN_DURATION 4.0f
@@ -79,6 +80,9 @@ struct GameState
 
   GameState();
   GameState(const GameState &other);
+
+  void SetTime(float t);
+
   bool operator==(const GameState &other) const;
   bool IsGoal() const;
 

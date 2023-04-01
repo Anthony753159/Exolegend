@@ -3,6 +3,8 @@
 #include "gladiator.h"
 #include "comms.hpp"
 #include "algos/common.hpp"
+#include "algos/astar.hpp"
+#include "algos/montecarlo.hpp"
 
 class Strategy
 {
@@ -18,10 +20,10 @@ private:
 
   Gladiator *m_gladiator;
 
-  /* Maze */
   bool m_maze_initialized = false;
   float m_maze_size;
   float m_square_size;
 
-  float m_rewards[MAZE_SIZE * MAZE_SIZE] = {0};
+  GameState m_state;
+  unsigned long m_match_start_time;
 };

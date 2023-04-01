@@ -64,8 +64,8 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
 
   /* Return best action */
 
-  float best_mean_score = -1.0f;
-  float best_score = -1.0f;
+  float best_mean_score = -1000.0f;
+  float best_score = -1000.0f;
   Action best_action = Action::UNDEFINED;
 
   for (auto pair : scores_by_action)
@@ -78,7 +78,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
 
     if (counts_by_action[pair.first] > 0)
     {
-      float mean_score = pair.second / counts_by_action[pair.first];
+      float mean_score = scores_by_action[pair.first] / (1.0f * counts_by_action[pair.first]);
       if (mean_score > best_mean_score)
       {
         best_mean_score = mean_score;
@@ -87,7 +87,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
     }
   }
 
-  gladiator->log("Best mean score: %f, Best score: %f", best_mean_score, best_score);
+  gladiator->log("Best mean score: %f, Best score: %f, Action: %d", best_mean_score, best_score, best_action);
 
   return best_action;
 }

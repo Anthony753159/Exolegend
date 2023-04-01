@@ -4,3 +4,4 @@
 platformio.ini
 virtuals-1.9.0/
 build/
+*.bin

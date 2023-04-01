@@ -2,10 +2,6 @@
 
 #include <math.h>
 
-#include "algos/common.hpp"
-#include "algos/astar.hpp"
-#include "algos/montecarlo.hpp"
-
 Strategy::Strategy(Gladiator *gladiator) : m_gladiator(gladiator)
 {
 }
@@ -16,8 +12,6 @@ Strategy::~Strategy()
 
 TrajectoryMsg Strategy::Update(const RobotData &data)
 {
-  m_gladiator->log("Updating strategy");
-
   if (!m_maze_initialized)
   {
     InitMaze();
@@ -25,9 +19,6 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
   UpdateMaze();
 
   TrajectoryMsg msg;
-
-  GameState start;
-  start.maze_retract = 0;
 
   int8_t ix = (int8_t)(data.position.x / m_square_size);
   int8_t iy = (int8_t)(data.position.y / m_square_size);
@@ -48,13 +39,14 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
 
   m_gladiator->log("Robot position: (%d, %d, %d), angle: %f", ix, iy, idir, data.position.a);
 
-  start.pos = {ix, iy};
-  start.direction = idir;
-  start.remaining_slow_down = 0.0f;
-  start.maze_retract = 0;
-  start.rewards_we_got = 0;
-  start.wall_hits = 0;
-  start.time = 0;
+  m_state.pos = {ix, iy};
+  m_state.direction = idir;
+  m_state.remaining_slow_down = 0.0f;
+  m_state.rewards_we_got = 0;
+  // m_state.wall_hits = 0;
+  m_state.SetTime((millis() - m_match_start_time) * 0.001f);
+
+  m_gladiator->log("Time: %f, Maze retract: %d, %lu", m_state.time, m_state.maze_retract, millis());
 
   /*
     QUESTIONS:
@@ -66,46 +58,53 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
         > once every 20s
   */
 
-  for (size_t i = 0; i < MAZE_SIZE * MAZE_SIZE; i++)
-  {
-    start.rewards[i] = m_rewards[i];
-    start.sum_of_rewards += m_rewards[i];
-  }
-
-  Action action = MonteCarloTreeSearch(start, m_gladiator);
+  Action action = MonteCarloTreeSearch(m_state, m_gladiator);
+  int8_t move_dir = -1;
 
   switch (action)
   {
   case Action::MOVE_NORTH:
     m_gladiator->log("MOVE_NORTH");
     msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = start.GetNorth().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = start.GetNorth().y * m_square_size + 0.5f * m_square_size;
+    msg.goto_x = m_state.GetNorth().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = m_state.GetNorth().y * m_square_size + 0.5f * m_square_size;
+    move_dir = 0;
     break;
 
   case Action::MOVE_EAST:
     m_gladiator->log("MOVE_EAST");
     msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = start.GetEast().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = start.GetEast().y * m_square_size + 0.5f * m_square_size;
+    msg.goto_x = m_state.GetEast().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = m_state.GetEast().y * m_square_size + 0.5f * m_square_size;
+    move_dir = 1;
     break;
 
   case Action::MOVE_SOUTH:
     m_gladiator->log("MOVE_SOUTH");
     msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = start.GetSouth().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = start.GetSouth().y * m_square_size + 0.5f * m_square_size;
+    msg.goto_x = m_state.GetSouth().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = m_state.GetSouth().y * m_square_size + 0.5f * m_square_size;
+    move_dir = 2;
     break;
 
   case Action::MOVE_WEST:
     m_gladiator->log("MOVE_WEST");
     msg.order = TrajectoryMsg::ORDER_GOTO;
-    msg.goto_x = start.GetWest().x * m_square_size + 0.5f * m_square_size;
-    msg.goto_y = start.GetWest().y * m_square_size + 0.5f * m_square_size;
+    msg.goto_x = m_state.GetWest().x * m_square_size + 0.5f * m_square_size;
+    msg.goto_y = m_state.GetWest().y * m_square_size + 0.5f * m_square_size;
+    move_dir = 3;
     break;
 
   case Action::UNDEFINED:
     break;
+  }
+
+  if (move_dir != -1)
+  {
+    if (MazeWalls::GetInstance()->IsWall(ix, iy, move_dir))
+    {
+      m_state.wall_hits++;
+    }
   }
 
   return msg;
@@ -113,6 +112,8 @@ TrajectoryMsg Strategy::Update(const RobotData &data)
 
 void Strategy::InitMaze()
 {
+  m_match_start_time = millis();
+
   m_maze_size = m_gladiator->maze->getSize();
   m_square_size = m_gladiator->maze->getSquareSize();
 
@@ -122,7 +123,7 @@ void Strategy::InitMaze()
     {
       MazeSquare sqr = m_gladiator->maze->getSquare(x, y);
 
-      m_rewards[x + y * MAZE_SIZE] = sqr.coin.value;
+      m_state.rewards[x + y * MAZE_SIZE] = sqr.coin.value;
 
       if (x < MAZE_SIZE - 1)
       {
@@ -140,13 +141,15 @@ void Strategy::InitMaze()
 
 void Strategy::UpdateMaze()
 {
+  m_state.sum_of_rewards = 0;
+
   for (size_t x = 0; x < MAZE_SIZE; x++)
   {
     for (size_t y = 0; y < MAZE_SIZE; y++)
     {
       MazeSquare sqr = m_gladiator->maze->getSquare(x, y);
-
-      m_rewards[x + y * MAZE_SIZE] = sqr.coin.value;
+      m_state.rewards[x + y * MAZE_SIZE] = sqr.coin.value;
+      m_state.sum_of_rewards += sqr.coin.value;
     }
   }
 }
