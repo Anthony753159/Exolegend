@@ -6,8 +6,10 @@
 #include "comms.hpp"
 
 #define GAME_DURATION 120.0f
+
 #define TIME_ONE_CELL_FULL_SPEED 1.0f
 #define TIME_TURN 1.0f
+
 #define RETRACT_PERIOD 20.0f
 #define SLOWDOWN_FACTOR 10.0f
 #define BASE_SLOWDOWN_DURATION 4.0f
@@ -62,6 +64,8 @@ struct Vec2
 {
   int8_t x;
   int8_t y;
+
+  float Distance(const Vec2 &other) const;
 };
 
 struct RobotState

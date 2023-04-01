@@ -19,10 +19,10 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t
   scores_by_action[Action::MOVE_SOUTH] = 0.0f;
   scores_by_action[Action::MOVE_WEST] = 0.0f;
 
-  best_scores_by_action[Action::MOVE_NORTH] = 0.0f;
-  best_scores_by_action[Action::MOVE_EAST] = 0.0f;
-  best_scores_by_action[Action::MOVE_SOUTH] = 0.0f;
-  best_scores_by_action[Action::MOVE_WEST] = 0.0f;
+  best_scores_by_action[Action::MOVE_NORTH] = -10000.0f;
+  best_scores_by_action[Action::MOVE_EAST] = -10000.0f;
+  best_scores_by_action[Action::MOVE_SOUTH] = -10000.0f;
+  best_scores_by_action[Action::MOVE_WEST] = -10000.0f;
 
   /* Search N times */
 
@@ -43,7 +43,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t
     for (int j = 0; j < SEARCH_DEPTH && next_state.has_value(); j++)
     {
       current_state = next_state.value();
-      if (current_state.IsGoal())
+      if (current_state.IsGoal() || current_state.time > start.time + SEARCH_TIME)
       {
         break;
       }
@@ -53,19 +53,20 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t
       previous_action = next_action;
     }
 
-    /* Backpropagate score */
+    float score = current_state.rewards_we_got;
+
     counts_by_action[first_action]++;
-    scores_by_action[first_action] += current_state.rewards_we_got;
-    if (current_state.rewards_we_got > best_scores_by_action[first_action])
+    scores_by_action[first_action] += score;
+    if (score > best_scores_by_action[first_action])
     {
-      best_scores_by_action[first_action] = current_state.rewards_we_got;
+      best_scores_by_action[first_action] = score;
     }
   }
 
   /* Return best action */
 
-  float best_mean_score = -1000.0f;
-  float best_score = -1000.0f;
+  float best_mean_score = -10000.0f;
+  float best_score = -10000.0f;
   Action best_action = Action::UNDEFINED;
 
   for (auto pair : scores_by_action)
@@ -73,7 +74,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t
     if (best_scores_by_action[pair.first] > best_score)
     {
       best_score = best_scores_by_action[pair.first];
-      // best_action = pair.first;
+      best_action = pair.first;
     }
 
     if (counts_by_action[pair.first] > 0)
@@ -82,7 +83,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator, size_t
       if (mean_score > best_mean_score)
       {
         best_mean_score = mean_score;
-        best_action = pair.first;
+        // best_action = pair.first;
       }
     }
   }

@@ -3,6 +3,11 @@
 #include <cstdio>
 #include <random>
 
+float Vec2::Distance(const Vec2 &other) const
+{
+  return sqrtf(1.0f * ((x - other.x) * (x - other.x) + (y - other.y) * (y - other.y)));
+}
+
 GameState::GameState() = default;
 
 GameState::GameState(const GameState &other)
@@ -196,6 +201,13 @@ std::optional<GameState> GameState::ApplyAction(Action action, size_t playing_ro
   }
 
   if (!IsInsideBounds(new_state.robots[playing_robot].pos))
+  {
+    return std::nullopt;
+  }
+
+  bool above_before = robots[playing_robot].pos.y >= MAZE_SIZE / 2;
+  bool above_after = new_state.robots[playing_robot].pos.y >= MAZE_SIZE / 2;
+  if (above_before != above_after)
   {
     return std::nullopt;
   }
