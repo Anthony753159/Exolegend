@@ -120,5 +120,5 @@ struct GameState
   bool IsInsideBounds(const Vec2 &vec) const;
   Action GetRandomAction(Action previous_action) const;
 
-  std::optional<GameState> ApplyAction(Action action) const;
+  std::optional<GameState> ApplyAction(Action action, bool first_action) const;
 };

@@ -31,7 +31,7 @@ void GameState::SetTime(float t)
 {
   remaining_slow_down -= t - time;
   time = t;
-  maze_retract = static_cast<int>((time + 4.0f) / RETRACT_PERIOD);
+  maze_retract = static_cast<int>((time + 1.0f) / RETRACT_PERIOD);
 }
 
 bool GameState::IsGoal() const
@@ -155,7 +155,7 @@ Action GameState::GetRandomAction(Action previous_action) const
   return MOVE_NORTH;
 }
 
-std::optional<GameState> GameState::ApplyAction(Action action) const
+std::optional<GameState> GameState::ApplyAction(Action action, bool first_action) const
 {
   GameState new_state{*this};
 
@@ -199,7 +199,7 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
   hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, new_state.direction);
   if (hit_a_wall)
   {
-    if (FORBID_WALLS && visits[pos.x + pos.y * MAZE_SIZE] < N_VISITS_BEFORE_WALLS)
+    if (FORBID_WALLS && !(first_action && visits[pos.x + pos.y * MAZE_SIZE] >= N_VISITS_BEFORE_WALLS))
     {
       return std::nullopt;
     }
