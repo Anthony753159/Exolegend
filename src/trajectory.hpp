@@ -1,7 +1,7 @@
 #pragma once
 
 #include "gladiator.h"
-#include "comms.hpp"
+#include "utils.hpp"
 
 struct Vec2f
 {
@@ -20,6 +20,8 @@ public:
   void Update(const RobotData &data);
 
   bool GotoBaseReached() const;
+  bool ShouldSearchStrategy() const;
+  bool ShouldApplyStrategy() const;
 
   TrajectoryMsg::State GetState() const;
 
@@ -33,11 +35,14 @@ private:
   float m_goto_angle;
   bool m_goto_reverse;
   bool m_goto_base_reached;
-
-  float m_target_angle;
+  bool m_goto_high_speed;
 
   float m_start_x;
   float m_start_y;
   float m_distance_remaining;
   bool m_distance_forward;
+
+  unsigned long m_last_time_updated;
+  float m_rotate_time_remaining;
+  bool m_rotate_direction;
 };
