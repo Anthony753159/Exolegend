@@ -31,7 +31,7 @@ void GameState::SetTime(float t)
 {
   remaining_slow_down -= t - time;
   time = t;
-  maze_retract = static_cast<int>((time + 1.0f) / RETRACT_PERIOD);
+  maze_retract = static_cast<int>((time + 2.0f) / RETRACT_PERIOD);
 }
 
 bool GameState::IsGoal() const

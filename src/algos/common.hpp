@@ -14,6 +14,8 @@
 #define PER_HIT_SLOWDOWN_DURATION 1.0f
 #define MAX_RETRACT 5
 
+#define N_ROBOTS 4
+
 #define FORBID_WALLS true
 #define N_VISITS_BEFORE_WALLS 3
 

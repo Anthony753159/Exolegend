@@ -10,7 +10,7 @@ Strategy::~Strategy()
 {
 }
 
-void Strategy::Update(const RobotData &data)
+void Strategy::Update(const RobotData &data, const RobotList &list, RobotData *others_data)
 {
   if (!m_maze_initialized)
   {
@@ -35,8 +35,6 @@ void Strategy::Update(const RobotData &data)
     idir = 2; /* South */
   }
 
-  m_gladiator->log("Robot position: (%d, %d, %d), angle: %f", ix, iy, idir, data.position.a);
-
   m_state.pos = {ix, iy};
   m_state.visits[ix + iy * MAZE_SIZE]++;
   m_state.direction = idir;
@@ -44,9 +42,27 @@ void Strategy::Update(const RobotData &data)
   m_state.rewards_we_got = 0;
   m_state.SetTime((millis() - m_match_start_time) * 0.001f);
 
-  m_gladiator->log("Time: %f, Maze retract: %d, %lu", m_state.time, m_state.maze_retract, millis());
+  GameState altered_state{m_state};
+  for (size_t i = 0; i < N_ROBOTS; i++)
+  {
+    if (others_data[i].id == data.id)
+    {
+      continue;
+    }
 
-  Action action = MonteCarloTreeSearch(m_state, m_gladiator);
+    int8_t oix = (int8_t)(others_data[i].position.x / m_square_size);
+    int8_t oiy = (int8_t)(others_data[i].position.y / m_square_size);
+
+    for (int8_t x = std::max(0, oix - 1); x <= std::min(MAZE_SIZE - 1, oix + 1); x++)
+    {
+      for (int8_t y = std::max(0, oiy - 1); y <= std::min(MAZE_SIZE - 1, oiy + 1); y++)
+      {
+        altered_state.rewards[x + y * MAZE_SIZE] = 0;
+      }
+    }
+  }
+
+  Action action = MonteCarloTreeSearch(altered_state, m_gladiator);
 
   int8_t move_dir = -1;
 

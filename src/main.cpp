@@ -2,6 +2,7 @@
 
 #include "strategy.hpp"
 #include "trajectory.hpp"
+#include "algos/common.hpp"
 
 #define FREE_MODE false
 
@@ -43,12 +44,25 @@ void reset()
 }
 
 RobotData robot_data;
+RobotData other_robots_data[N_ROBOTS];
+RobotList robot_list;
+bool once = true;
 
 void loop()
 {
   if (gladiator->game->isStarted())
   {
+    if (once)
+    {
+      once = false;
+      robot_list = gladiator->game->getPlayingRobotsId();
+    }
+
     robot_data = gladiator->robot->getData();
+    for (size_t i = 0; i < N_ROBOTS; i++)
+    {
+      other_robots_data[i] = gladiator->game->getOtherRobotData(robot_list.ids[i]);
+    }
 
     trajectory->Update(robot_data);
 
@@ -56,7 +70,7 @@ void loop()
     {
       if (!strategy->IsNextMsgValid())
       {
-        strategy->Update(robot_data);
+        strategy->Update(robot_data, robot_list, other_robots_data);
       }
     }
 

@@ -11,7 +11,7 @@ public:
   Strategy(Gladiator *gladiator);
   ~Strategy();
 
-  void Update(const RobotData &data);
+  void Update(const RobotData &data, const RobotList &list, RobotData *others_data);
   TrajectoryMsg GetNextMsg() const;
 
   bool IsNextMsgValid() const;
