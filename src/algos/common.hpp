@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <optional>
 
-#include "comms.hpp"
+#include "utils.hpp"
 
 #define GAME_DURATION 120.0f
 #define TIME_ONE_CELL_FULL_SPEED 0.5f
@@ -76,6 +76,8 @@ enum Action
   MOVE_EAST,
   MOVE_SOUTH,
   MOVE_WEST,
+  ATTACK,
+  DEFEND
 };
 
 struct Vec2

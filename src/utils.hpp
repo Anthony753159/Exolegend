@@ -1,5 +1,7 @@
 #pragma once
 
+#include <math.h>
+
 #define MAZE_SIZE 14
 
 struct TrajectoryMsg
@@ -7,12 +9,7 @@ struct TrajectoryMsg
   enum State
   {
     IDLE,
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
     ROTATE,
-    MOVE_DISTANCE,
     GOTO
   };
 
@@ -20,9 +17,7 @@ struct TrajectoryMsg
   {
     UNDEFINED,
     ORDER_GOTO,
-    ORDER_SET_STATE,
     ORDER_ROTATE,
-    ORDER_MOVE_DISTANCE
   };
 
   Order order = UNDEFINED;
@@ -32,14 +27,8 @@ struct TrajectoryMsg
   float goto_y;
   float goto_angle;
   bool goto_reverse;
-
-  // ORDER_SET_STATE
-  State state;
-
-  // ORDER_ROTATE
-  float angle;
-
-  // MOVE_DISTANCE
-  float distance;
-  bool forward;
+  bool goto_high_speed;
 };
+
+float AngleDiffRad(float from, float to);
+float Abs(float a);

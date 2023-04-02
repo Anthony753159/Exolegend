@@ -87,7 +87,5 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
     }
   }
 
-  gladiator->log("Best mean score: %f, Best score: %f, Action: %d", best_mean_score, best_score, best_action);
-
   return best_action;
 }

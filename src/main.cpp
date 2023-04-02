@@ -66,7 +66,7 @@ void loop()
 
     trajectory->Update(robot_data);
 
-    if (trajectory->GotoBaseReached() || trajectory->GetState() == TrajectoryMsg::State::IDLE)
+    if (trajectory->ShouldSearchStrategy())
     {
       if (!strategy->IsNextMsgValid())
       {
@@ -74,7 +74,7 @@ void loop()
       }
     }
 
-    if (trajectory->GetState() == TrajectoryMsg::State::IDLE)
+    if (trajectory->ShouldApplyStrategy())
     {
       TrajectoryMsg msg = strategy->GetNextMsg();
       strategy->ConsumeMsg();

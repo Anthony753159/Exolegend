@@ -1,9 +1,11 @@
 #pragma once
 
 #include "gladiator.h"
-#include "comms.hpp"
+#include "utils.hpp"
 #include "algos/common.hpp"
 #include "algos/montecarlo.hpp"
+
+#define ENEMY_DETECTION_RANGE 2.0f
 
 class Strategy
 {

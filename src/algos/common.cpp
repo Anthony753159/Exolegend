@@ -184,7 +184,7 @@ std::optional<GameState> GameState::ApplyAction(Action action, bool first_action
     new_state.direction = 3;
     action_time = TIME_ONE_CELL_FULL_SPEED + (direction == 1 || direction == 3 ? 0 : TIME_TURN);
     break;
-  case UNDEFINED:
+  default:
     break;
   }
 
