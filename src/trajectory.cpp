@@ -3,11 +3,12 @@
 #include <algorithm>
 
 #define FORCE_REVERSE true
-#define POSITION_SHIFT 0.03f
+#define POSITION_SHIFT 0.02f
 #define MAX_ANGLE_DIFF (M_PI / 2)
 
-#define WHEEL_TURN_SPEED_BACKWARD 0.5f
-#define WHEEL_TURN_SPEED_FORWARD 0.7f
+#define WHEEL_TURN_SPEED_BACKWARD 0.6f
+#define WHEEL_TURN_SPEED_FORWARD 0.6f
+#define WHEEL_BACKWARD_SPEED 0.4f
 #define WHEEL_FORWARD_SPEED 0.4f
 
 #define GOTO_BASE_DISTANCE_THRESHOLD 0.06f
@@ -122,8 +123,9 @@ bool Trajectory::Goto(const RobotData &data)
 
   float forward_speed = 0.0f;
   float turn_speed = 0.0f;
+  float speed_limit = (m_goto_reverse ? WHEEL_BACKWARD_SPEED : WHEEL_FORWARD_SPEED);
 
-  forward_speed = WHEEL_FORWARD_SPEED * (1.0f - Abs(angle_diff) / MAX_ANGLE_DIFF);
+  forward_speed = speed_limit * (1.0f - Abs(angle_diff) / MAX_ANGLE_DIFF);
   if (m_goto_base_reached)
   {
     forward_speed *= 0.5f;
@@ -131,7 +133,7 @@ bool Trajectory::Goto(const RobotData &data)
 
   turn_speed = (m_goto_reverse ? WHEEL_TURN_SPEED_BACKWARD : WHEEL_TURN_SPEED_FORWARD) * (angle_diff > 0 ? 1.0f : -1.0f) * Abs(angle_diff) / MAX_ANGLE_DIFF;
 
-  float reduction_factor = std::fmin(data.speedLimit, WHEEL_FORWARD_SPEED) / WHEEL_FORWARD_SPEED;
+  float reduction_factor = std::fmin(data.speedLimit, speed_limit) / speed_limit;
 
   if (m_goto_reverse)
   {

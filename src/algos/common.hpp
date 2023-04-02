@@ -6,19 +6,39 @@
 #include "comms.hpp"
 
 #define GAME_DURATION 120.0f
-#define TIME_ONE_CELL_FULL_SPEED 1.0f
-#define TIME_TURN 1.0f
+#define TIME_ONE_CELL_FULL_SPEED 0.5f
+#define TIME_TURN 0.5f
 #define RETRACT_PERIOD 20.0f
 #define SLOWDOWN_FACTOR 10.0f
-#define BASE_SLOWDOWN_DURATION 4.0f
+#define BASE_SLOWDOWN_DURATION 8.0f
 #define PER_HIT_SLOWDOWN_DURATION 1.0f
+#define MAX_RETRACT 5
+
+#define FORBID_WALLS true
+#define N_VISITS_BEFORE_WALLS 3
+
+class Gladiator;
 
 struct MazeWalls
 {
+private:
+  MazeWalls() {}
+  static MazeWalls *inst;
+
+public:
+  static void ResetInstance()
+  {
+    delete inst;
+    inst = nullptr;
+  }
+
   static MazeWalls *GetInstance()
   {
-    static MazeWalls instance;
-    return &instance;
+    if (inst == nullptr)
+    {
+      inst = new MazeWalls();
+    }
+    return inst;
   }
 
   /* Walls we encounter when we walk horizontally */
@@ -44,8 +64,7 @@ struct MazeWalls
     return false;
   }
 
-private:
-  MazeWalls() {}
+  Gladiator *gladiator;
 };
 
 enum Action
@@ -69,6 +88,7 @@ struct GameState
   float time = 0.0f;
   int8_t maze_retract = 0;
   float rewards[MAZE_SIZE * MAZE_SIZE] = {0};
+  int8_t visits[MAZE_SIZE * MAZE_SIZE] = {0};
   float sum_of_rewards = 0;
   float rewards_we_got = 0;
 
@@ -83,7 +103,6 @@ struct GameState
 
   void SetTime(float t);
 
-  bool operator==(const GameState &other) const;
   bool IsGoal() const;
 
   Vec2 GetNorth() const;

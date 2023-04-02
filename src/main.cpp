@@ -38,6 +38,8 @@ void reset()
     delete trajectory;
   }
   trajectory = new Trajectory(gladiator);
+
+  MazeWalls::ResetInstance();
 }
 
 RobotData robot_data;

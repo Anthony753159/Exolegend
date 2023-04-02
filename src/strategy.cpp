@@ -38,6 +38,7 @@ void Strategy::Update(const RobotData &data)
   m_gladiator->log("Robot position: (%d, %d, %d), angle: %f", ix, iy, idir, data.position.a);
 
   m_state.pos = {ix, iy};
+  m_state.visits[ix + iy * MAZE_SIZE]++;
   m_state.direction = idir;
   m_state.remaining_slow_down = 0.0f;
   m_state.rewards_we_got = 0;
@@ -46,13 +47,34 @@ void Strategy::Update(const RobotData &data)
   m_gladiator->log("Time: %f, Maze retract: %d, %lu", m_state.time, m_state.maze_retract, millis());
 
   Action action = MonteCarloTreeSearch(m_state, m_gladiator);
+
   int8_t move_dir = -1;
 
-  m_next_msg.goto_reverse = m_previous_goto_reverse;
-  if (action != m_previous_action)
+  if (m_previous_action == Action::MOVE_NORTH && action == Action::MOVE_SOUTH)
   {
-    m_next_msg.goto_reverse = !m_next_msg.goto_reverse;
+    m_next_msg.goto_reverse = !m_previous_goto_reverse;
   }
+  else if (m_previous_action == Action::MOVE_SOUTH && action == Action::MOVE_NORTH)
+  {
+    m_next_msg.goto_reverse = !m_previous_goto_reverse;
+  }
+  else if (m_previous_action == Action::MOVE_EAST && action == Action::MOVE_WEST)
+  {
+    m_next_msg.goto_reverse = !m_previous_goto_reverse;
+  }
+  else if (m_previous_action == Action::MOVE_WEST && action == Action::MOVE_EAST)
+  {
+    m_next_msg.goto_reverse = !m_previous_goto_reverse;
+  }
+  else if (m_previous_action == action)
+  {
+    m_next_msg.goto_reverse = m_previous_goto_reverse;
+  }
+  else
+  {
+    m_next_msg.goto_reverse = true;
+  }
+
   m_previous_action = action;
   m_previous_goto_reverse = m_next_msg.goto_reverse;
 
@@ -126,6 +148,8 @@ void Strategy::ConsumeMsg()
 
 void Strategy::InitMaze()
 {
+  MazeWalls::GetInstance()->gladiator = m_gladiator;
+
   m_match_start_time = millis();
 
   m_maze_size = m_gladiator->maze->getSize();

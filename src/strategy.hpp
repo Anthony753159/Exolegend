@@ -3,7 +3,6 @@
 #include "gladiator.h"
 #include "comms.hpp"
 #include "algos/common.hpp"
-#include "algos/astar.hpp"
 #include "algos/montecarlo.hpp"
 
 class Strategy
