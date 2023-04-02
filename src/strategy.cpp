@@ -57,7 +57,7 @@ void Strategy::Update(const RobotData &data, const RobotList &list, RobotData *o
     {
       for (int8_t y = std::max(0, oiy - 1); y <= std::min(MAZE_SIZE - 1, oiy + 1); y++)
       {
-        altered_state.rewards[x + y * MAZE_SIZE] = 0;
+        altered_state.rewards[x + y * MAZE_SIZE] = 0.1f * altered_state.rewards[x + y * MAZE_SIZE];
       }
     }
   }
