@@ -172,7 +172,7 @@ void Trajectory::Update(const RobotData &data)
       m_gladiator->log("Change direction");
     }
 
-    m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.95f * (m_rotate_direction ? -1.0f : 1.0f));
+    m_gladiator->control->setWheelSpeed(WheelAxis::RIGHT, 0.8f * (m_rotate_direction ? -1.0f : 1.0f));
     m_gladiator->control->setWheelSpeed(WheelAxis::LEFT, m_rotate_direction ? 1.0f : -1.0f);
   }
   break;

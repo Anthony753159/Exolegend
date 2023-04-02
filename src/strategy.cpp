@@ -81,7 +81,7 @@ void Strategy::Update(const RobotData &data, const RobotList &list, RobotData *o
         float angle_enemy_facing = others_data[i].position.a;
         float angle_diff = AngleDiffRad(angle_from_me_to_enemy, angle_enemy_facing);
 
-        bool enemy_facing_away = Abs(angle_diff) < M_PI / 2;
+        bool enemy_facing_away = Abs(angle_diff) < 3 * M_PI / 4;
         bool enemy_in_straigh_line = ix == oix || iy == oiy;
 
         if (enemy_facing_away && enemy_in_straigh_line)
