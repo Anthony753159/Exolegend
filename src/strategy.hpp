@@ -1,10 +1,11 @@
 #pragma once
 
 #include "gladiator.h"
-#include "comms.hpp"
+#include "utils.hpp"
 #include "algos/common.hpp"
-#include "algos/astar.hpp"
 #include "algos/montecarlo.hpp"
+
+#define ENEMY_DETECTION_RANGE 2.0f
 
 class Strategy
 {
@@ -12,7 +13,7 @@ public:
   Strategy(Gladiator *gladiator);
   ~Strategy();
 
-  void Update(const RobotData &data);
+  void Update(const RobotData &data, const RobotList &list, RobotData *others_data);
   TrajectoryMsg GetNextMsg() const;
 
   bool IsNextMsgValid() const;

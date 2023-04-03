@@ -9,9 +9,9 @@
 #include "gladiator.h"
 
 #include "common.hpp"
-#include "comms.hpp"
+#include "utils.hpp"
 
-#define SEARCH_DEPTH 200
+#define SEARCH_DEPTH 300
 #define SEARCH_PATHS 256
 
 Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator);

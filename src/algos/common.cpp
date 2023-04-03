@@ -3,6 +3,10 @@
 #include <cstdio>
 #include <random>
 
+#include "gladiator.h"
+
+MazeWalls *MazeWalls::inst = nullptr;
+
 GameState::GameState() = default;
 
 GameState::GameState(const GameState &other)
@@ -19,6 +23,7 @@ GameState::GameState(const GameState &other)
   for (size_t i = 0; i < MAZE_SIZE * MAZE_SIZE; i++)
   {
     rewards[i] = other.rewards[i];
+    visits[i] = other.visits[i];
   }
 }
 
@@ -26,22 +31,7 @@ void GameState::SetTime(float t)
 {
   remaining_slow_down -= t - time;
   time = t;
-  maze_retract = static_cast<int>((time + 4.0f) / RETRACT_PERIOD);
-}
-
-bool GameState::operator==(const GameState &other) const
-{
-  bool same_rewards = true;
-  for (size_t i = 0; i < MAZE_SIZE * MAZE_SIZE; i++)
-  {
-    if (rewards[i] != other.rewards[i])
-    {
-      same_rewards = false;
-      break;
-    }
-  }
-
-  return maze_retract == other.maze_retract && pos.x == other.pos.x && pos.y == other.pos.y && direction == other.direction && remaining_slow_down == other.remaining_slow_down && same_rewards;
+  maze_retract = static_cast<int>((time + 2.0f) / RETRACT_PERIOD);
 }
 
 bool GameState::IsGoal() const
@@ -165,7 +155,7 @@ Action GameState::GetRandomAction(Action previous_action) const
   return MOVE_NORTH;
 }
 
-std::optional<GameState> GameState::ApplyAction(Action action) const
+std::optional<GameState> GameState::ApplyAction(Action action, bool first_action) const
 {
   GameState new_state{*this};
 
@@ -194,11 +184,12 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
     new_state.direction = 3;
     action_time = TIME_ONE_CELL_FULL_SPEED + (direction == 1 || direction == 3 ? 0 : TIME_TURN);
     break;
-  case UNDEFINED:
+  default:
     break;
   }
 
   new_state.SetTime(time + action_time * (remaining_slow_down > 0.0f ? SLOWDOWN_FACTOR : 1.0f));
+  new_state.visits[new_state.pos.x + new_state.pos.y * MAZE_SIZE]++;
 
   if (!IsInsideBounds(new_state.pos))
   {
@@ -208,7 +199,11 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
   hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, new_state.direction);
   if (hit_a_wall)
   {
-    return std::nullopt;
+    if (FORBID_WALLS && !(first_action && visits[pos.x + pos.y * MAZE_SIZE] >= N_VISITS_BEFORE_WALLS))
+    {
+      return std::nullopt;
+    }
+
     new_state.remaining_slow_down = BASE_SLOWDOWN_DURATION + new_state.wall_hits * PER_HIT_SLOWDOWN_DURATION;
     new_state.wall_hits++;
   }

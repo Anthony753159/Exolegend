@@ -30,7 +30,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
   {
     Action first_action = start.GetRandomAction(Action::UNDEFINED);
     GameState current_state = start;
-    std::optional<GameState> next_state = start.ApplyAction(first_action);
+    std::optional<GameState> next_state = start.ApplyAction(first_action, true);
     Action previous_action = first_action;
 
     if (!next_state.has_value())
@@ -49,7 +49,7 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
       }
 
       Action next_action = current_state.GetRandomAction(previous_action);
-      next_state = current_state.ApplyAction(next_action);
+      next_state = current_state.ApplyAction(next_action, false);
       previous_action = next_action;
     }
 
@@ -86,8 +86,6 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
       }
     }
   }
-
-  gladiator->log("Best mean score: %f, Best score: %f, Action: %d", best_mean_score, best_score, best_action);
 
   return best_action;
 }
