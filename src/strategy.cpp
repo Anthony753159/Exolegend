@@ -35,11 +35,15 @@ void Strategy::Update(const RobotData &data)
     idir = 2; /* South */
   }
 
+  m_gladiator->log("Robot position: (%d, %d, %d), angle: %f", ix, iy, idir, data.position.a);
+
   m_state.pos = {ix, iy};
   m_state.direction = idir;
-  m_state.remaining_slow_down = data.speedLimit < 0.5f ? BASE_SLOWDOWN_DURATION : 0;
+  m_state.remaining_slow_down = 0.0f;
   m_state.rewards_we_got = 0;
   m_state.SetTime((millis() - m_match_start_time) * 0.001f);
+
+  m_gladiator->log("Time: %f, Maze retract: %d, %lu", m_state.time, m_state.maze_retract, millis());
 
   Action action = MonteCarloTreeSearch(m_state, m_gladiator);
   int8_t move_dir = -1;

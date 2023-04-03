@@ -3,64 +3,6 @@
 #include <cstdio>
 #include <random>
 
-bool MazeWalls::HasPathToCenter(int8_t x, int8_t y, int8_t r)
-{
-  int8_t cx = MAZE_SIZE / 2;
-  int8_t cy = MAZE_SIZE / 2;
-
-  if (x == cx && y == cy)
-  {
-    return true;
-  }
-
-  for (size_t i = 0; i < MAZE_SIZE * MAZE_SIZE; i++)
-  {
-    visit_map[i] = false;
-  }
-
-  return LookForPath(x, y, cx, cy, r);
-}
-
-bool MazeWalls::LookForPath(int8_t x, int8_t y, int8_t tx, int8_t ty, int8_t r)
-{
-  if (x == tx && y == ty)
-  {
-    return true;
-  }
-
-  visit_map[x + y * MAZE_SIZE] = true;
-
-  int8_t nx = x + 1;
-  int8_t ny = y;
-  if (nx < MAZE_SIZE - r && nx >= r && ny < MAZE_SIZE - r && !visit_map[nx + ny * MAZE_SIZE] && ny >= r && !IsWall(x, y, 1) && LookForPath(nx, ny, tx, ty, r))
-  {
-    return true;
-  }
-
-  nx = x - 1;
-  ny = y;
-  if (nx < MAZE_SIZE - r && nx >= r && ny < MAZE_SIZE - r && ny >= r && !visit_map[nx + ny * MAZE_SIZE] && !IsWall(x, y, 3) && LookForPath(nx, ny, tx, ty, r))
-  {
-    return true;
-  }
-
-  nx = x;
-  ny = y + 1;
-  if (nx < MAZE_SIZE - r && nx >= r && ny < MAZE_SIZE - r && ny >= r && !visit_map[nx + ny * MAZE_SIZE] && !IsWall(x, y, 0) && LookForPath(nx, ny, tx, ty, r))
-  {
-    return true;
-  }
-
-  nx = x;
-  ny = y - 1;
-  if (nx < MAZE_SIZE - r && nx >= r && ny < MAZE_SIZE - r && ny >= r && !visit_map[nx + ny * MAZE_SIZE] && !IsWall(x, y, 2) && LookForPath(nx, ny, tx, ty, r))
-  {
-    return true;
-  }
-
-  return false;
-}
-
 GameState::GameState() = default;
 
 GameState::GameState(const GameState &other)
@@ -262,13 +204,6 @@ std::optional<GameState> GameState::ApplyAction(Action action) const
   {
     return std::nullopt;
   }
-
-  // bool above_before = pos.y >= MAZE_SIZE / 2;
-  // bool above_after = new_state.pos.y >= MAZE_SIZE / 2;
-  // if (above_before != above_after)
-  // {
-  //   return std::nullopt;
-  // }
 
   hit_a_wall = MazeWalls::GetInstance()->IsWall(pos.x, pos.y, new_state.direction);
   if (hit_a_wall)
