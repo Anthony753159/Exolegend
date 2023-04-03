@@ -1,9 +1,13 @@
 
 #include "montecarlo.hpp"
 
+#include <algorithm>
 #include <map>
+#include <math.h>
 
-Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
+#include "utils.hpp"
+
+Action MonteCarloTreeSearch(const GameState &start_state, const MazeWalls &walls)
 {
   std::map<Action, int> counts_by_action;
   std::map<Action, float> scores_by_action;
@@ -19,67 +23,54 @@ Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator)
   scores_by_action[Action::MOVE_SOUTH] = 0.0f;
   scores_by_action[Action::MOVE_WEST] = 0.0f;
 
-  best_scores_by_action[Action::MOVE_NORTH] = 0.0f;
-  best_scores_by_action[Action::MOVE_EAST] = 0.0f;
-  best_scores_by_action[Action::MOVE_SOUTH] = 0.0f;
-  best_scores_by_action[Action::MOVE_WEST] = 0.0f;
-
-  /* Search N times */
-
+  /* Simulate many scenarios from current state */
   for (int i = 0; i < SEARCH_PATHS; i++)
   {
-    Action first_action = start.GetRandomAction(Action::UNDEFINED);
-    GameState current_state = start;
-    std::optional<GameState> next_state = start.ApplyAction(first_action, true);
-    Action previous_action = first_action;
+    Action first_action = start_state.GetRandomMoveAction();
+    GameState current_state = start_state;
+    std::optional<GameState> next_state = start_state.ApplyAction(first_action, true, walls);
 
     if (!next_state.has_value())
     {
+      /* First action was invalid, don't even count that scenario */
       continue;
     }
 
-    /* Search until depth or game over */
-
+    /* Search until maximum depth, an invalid gamestate, or a gameover situation */
     for (int j = 0; j < SEARCH_DEPTH && next_state.has_value(); j++)
     {
-      current_state = next_state.value();
-      if (current_state.IsGoal())
+      if (!next_state.has_value())
       {
         break;
       }
 
-      Action next_action = current_state.GetRandomAction(previous_action);
-      next_state = current_state.ApplyAction(next_action, false);
-      previous_action = next_action;
-    }
+      current_state = next_state.value();
+      if (current_state.IsGameOver())
+      {
+        break;
+      }
 
-    /* Backpropagate score */
+      Action next_action = current_state.GetRandomMoveAction();
+      next_state = current_state.ApplyAction(next_action, false, walls);
+    }
+    /* NOTE: 'current_state' always contains the last valid state */
+
+    /* Accumulate scores based on the first action taken in the scenario */
     counts_by_action[first_action]++;
     scores_by_action[first_action] += current_state.rewards_we_got;
-    if (current_state.rewards_we_got > best_scores_by_action[first_action])
-    {
-      best_scores_by_action[first_action] = current_state.rewards_we_got;
-    }
   }
 
-  /* Return best action */
+  /* Return the action that led to the best scenarios in average */
 
-  float best_mean_score = -1000.0f;
-  float best_score = -1000.0f;
+  float best_mean_score = nanf("");
   Action best_action = Action::UNDEFINED;
 
   for (auto pair : scores_by_action)
   {
-    if (best_scores_by_action[pair.first] > best_score)
-    {
-      best_score = best_scores_by_action[pair.first];
-      // best_action = pair.first;
-    }
-
     if (counts_by_action[pair.first] > 0)
     {
-      float mean_score = scores_by_action[pair.first] / (1.0f * counts_by_action[pair.first]);
-      if (mean_score > best_mean_score)
+      float mean_score = pair.second / (1.0f * counts_by_action[pair.first]);
+      if (isnan(best_mean_score) || mean_score > best_mean_score)
       {
         best_mean_score = mean_score;
         best_action = pair.first;

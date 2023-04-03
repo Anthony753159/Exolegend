@@ -2,86 +2,79 @@
 
 #include "strategy.hpp"
 #include "trajectory.hpp"
-#include "algos/common.hpp"
+#include "algos/maze.hpp"
+#include "algos/gamestate.hpp"
 
-#define FREE_MODE false
+/* Variables */
+
+/* Contains everything that needs a reset between games */
+struct RobotBehaviorComponents
+{
+  RobotBehaviorComponents(Gladiator *gladiator = nullptr) : strategy(gladiator), trajectory(gladiator) {}
+
+  Strategy strategy;
+  Trajectory trajectory;
+} components;
 
 Gladiator *gladiator;
-Strategy *strategy = nullptr;
-Trajectory *trajectory = nullptr;
 
-void reset();
+/* Used to keep variables between loop() calls */
+GameData game_data;
+
+/* Gladiator API functions */
+
+void reset()
+{
+  components = RobotBehaviorComponents(gladiator);
+  game_data = GameData();
+}
 
 void setup()
 {
   gladiator = new Gladiator();
-  strategy = new Strategy(gladiator);
-  trajectory = new Trajectory(gladiator);
-
-  if (FREE_MODE)
-  {
-    gladiator->game->enableFreeMode(RemoteMode::OFF);
-  }
+  components = RobotBehaviorComponents(gladiator);
+  game_data = GameData();
 
   gladiator->game->onReset(&reset);
 }
-
-void reset()
-{
-  if (strategy != nullptr)
-  {
-    delete strategy;
-  }
-  strategy = new Strategy(gladiator);
-
-  if (trajectory != nullptr)
-  {
-    delete trajectory;
-  }
-  trajectory = new Trajectory(gladiator);
-
-  MazeWalls::ResetInstance();
-}
-
-RobotData robot_data;
-RobotData other_robots_data[N_ROBOTS];
-RobotList robot_list;
-bool once = true;
 
 void loop()
 {
   if (gladiator->game->isStarted())
   {
-    if (once)
+    /* Only getting the ID of playing robots once */
+    if (game_data.first_loop)
     {
-      once = false;
-      robot_list = gladiator->game->getPlayingRobotsId();
+      game_data.first_loop = false;
+      game_data.robot_list = gladiator->game->getPlayingRobotsId();
     }
 
-    robot_data = gladiator->robot->getData();
+    /* Retrieving robots data from the game master */
+    game_data.robot_data = gladiator->robot->getData();
     for (size_t i = 0; i < N_ROBOTS; i++)
     {
-      other_robots_data[i] = gladiator->game->getOtherRobotData(robot_list.ids[i]);
+      game_data.other_robots_data[i] = gladiator->game->getOtherRobotData(game_data.robot_list.ids[i]);
     }
 
-    trajectory->Update(robot_data);
+    /* Always trajectory, which handles robot movement */
+    components.trajectory.Update(game_data);
 
-    if (trajectory->ShouldSearchStrategy())
+    /* If trajectory says we can begin searching for the next strategy step, we do so */
+    if (components.trajectory.ShouldSearchStrategy())
     {
-      if (!strategy->IsNextMsgValid())
+      /* If we already have a valid strategy step next, we avoid recomputing it */
+      if (!components.strategy.IsNextMsgValid())
       {
-        strategy->Update(robot_data, robot_list, other_robots_data);
+        components.strategy.Update(game_data);
       }
     }
 
-    if (trajectory->ShouldApplyStrategy())
+    /* A bit later, the trajectory allows us to apply the selected strategy step */
+    if (components.trajectory.ShouldApplyStrategy())
     {
-      TrajectoryMsg msg = strategy->GetNextMsg();
-      strategy->ConsumeMsg();
-      if (msg.order != TrajectoryMsg::UNDEFINED)
-      {
-        trajectory->HandleMessage(msg);
-      }
+      /* We get the strategy message, consume it (marking it as invalid from now on), and pass it to the trajectory */
+      components.trajectory.HandleMessage(components.strategy.GetNextMsg());
+      components.strategy.ConsumeMsg();
     }
   }
 }

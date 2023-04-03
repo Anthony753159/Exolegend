@@ -1,17 +1,9 @@
-
 #pragma once
 
-#include <vector>
-#include <queue>
-#include <array>
-#include <algorithm>
-
-#include "gladiator.h"
-
-#include "common.hpp"
-#include "utils.hpp"
+#include "gamestate.hpp"
+#include "maze.hpp"
 
 #define SEARCH_DEPTH 300
 #define SEARCH_PATHS 256
 
-Action MonteCarloTreeSearch(const GameState &start, Gladiator *gladiator);
+Action MonteCarloTreeSearch(const GameState &start_state, const MazeWalls &walls);

@@ -1,34 +1,37 @@
 #pragma once
 
-#include <math.h>
+#include "gladiator.h"
+#include "algos/gamestate.hpp"
 
-#define MAZE_SIZE 14
-
-struct TrajectoryMsg
+struct GameData
 {
-  enum State
-  {
-    IDLE,
-    ROTATE,
-    GOTO
-  };
-
-  enum Order
-  {
-    UNDEFINED,
-    ORDER_GOTO,
-    ORDER_ROTATE,
-  };
-
-  Order order = UNDEFINED;
-
-  // ORDER_GOTO
-  float goto_x;
-  float goto_y;
-  float goto_angle;
-  bool goto_reverse;
-  bool goto_high_speed;
+  RobotData robot_data;
+  RobotData other_robots_data[N_ROBOTS];
+  RobotList robot_list;
+  bool first_loop = true;
 };
 
+enum TrajectoryState
+{
+  IDLE,
+  ROTATE,
+  GOTO
+};
+
+struct GotoParameters
+{
+  float x;
+  float y;
+  float angle;
+  bool backward;
+  bool high_speed;
+};
+
+struct StrategyToTrajectory
+{
+  TrajectoryState ordered_state = IDLE;
+  GotoParameters goto_parameters;
+};
+
+/* Always give the SMALLEST angle from angle 'from' to angle 'to' */
 float AngleDiffRad(float from, float to);
-float Abs(float a);
